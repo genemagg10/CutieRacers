@@ -108,7 +108,7 @@ const track = {
     // Track is defined as a series of segments with curvature
     // Each segment: { length, curve } where curve is turning rate
     segments: [],
-    roadWidth: 2200,
+    roadWidth: 3200,
     segmentLength: 200,
     totalSegments: 0,
     colors: {
@@ -296,7 +296,7 @@ class Racer {
         this.speed = Math.max(0, Math.min(this.speed, this.maxSpeed));
 
         // Apply steering with curve influence
-        const steerForce = this.steerInput * this.handling * 0.03 * dt * 60;
+        const steerForce = this.steerInput * this.handling * 0.04 * dt * 60;
         const curveForce = seg.curve * this.speed * 0.00004 * dt * 60;
         this.x += steerForce - curveForce;
 
@@ -1110,10 +1110,10 @@ function startRace() {
 // PSEUDO-3D RENDERING
 // ============================================================
 function project(x, y, z, camX, camY, camZ) {
-    const scale = 120 / z;
+    const scale = 150 / z;
     return {
         x: W / 2 + (x - camX) * scale,
-        y: H / 2 - (y - camY) * scale + H * 0.33,
+        y: H / 2 - (y - camY) * scale + H * 0.35,
         scale: scale
     };
 }
@@ -1191,7 +1191,7 @@ function drawRacing(dt) {
 
     // Render the track using pseudo-3D
     const playerSeg = Math.floor(player.position / track.segmentLength);
-    const camHeight = 1500;
+    const camHeight = 1800;
     const drawDist = 150;
 
     // Store projected segments for racer rendering
@@ -1343,13 +1343,13 @@ function drawRacing(dt) {
         const seg = track.segments[segIdx];
         const p = project(worldX, seg.y, z, camX, 1500, 0);
 
-        const carScale = p.scale * 35;
+        const carScale = p.scale * 22;
         if (carScale < 2) return;
 
         // Draw kart
         ctx.save();
         ctx.translate(p.x, p.y);
-        const s = carScale / 35;
+        const s = carScale / 22;
 
         // Spin animation
         if (r.spinTimer > 0) {
@@ -1421,9 +1421,11 @@ function drawRacing(dt) {
     });
 
     // Draw player car at bottom center (always visible)
-    const playerScreenY = H * 0.82;
+    const playerScreenY = H * 0.88;
     ctx.save();
     ctx.translate(W / 2, playerScreenY);
+
+    const playerCarScale = 0.9;
 
     // Steering tilt
     const tilt = player.steerInput * -0.15;
@@ -1436,31 +1438,31 @@ function drawRacing(dt) {
     // Shadow
     ctx.fillStyle = 'rgba(0,0,0,0.3)';
     ctx.beginPath();
-    ctx.ellipse(0, 20, 45, 12, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 15 * playerCarScale, 35 * playerCarScale, 10 * playerCarScale, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    drawCarPreview(0, 0, 1.5, carDesign, characters[selectedCharacter]);
+    drawCarPreview(0, 0, playerCarScale, carDesign, characters[selectedCharacter]);
 
     // Boost flames
     if (player.boostTimer > 0) {
         ctx.fillStyle = '#FF6600';
         ctx.beginPath();
-        ctx.moveTo(-8, 30);
-        ctx.lineTo(0, 50 + Math.random() * 15);
-        ctx.lineTo(8, 30);
+        ctx.moveTo(-5, 20 * playerCarScale);
+        ctx.lineTo(0, (35 + Math.random() * 10) * playerCarScale);
+        ctx.lineTo(5, 20 * playerCarScale);
         ctx.fill();
         ctx.fillStyle = '#FFFF00';
         ctx.beginPath();
-        ctx.moveTo(-4, 30);
-        ctx.lineTo(0, 40 + Math.random() * 10);
-        ctx.lineTo(4, 30);
+        ctx.moveTo(-3, 20 * playerCarScale);
+        ctx.lineTo(0, (28 + Math.random() * 7) * playerCarScale);
+        ctx.lineTo(3, 20 * playerCarScale);
         ctx.fill();
     }
 
     if (player.lured) {
-        ctx.font = '28px serif';
+        ctx.font = '20px serif';
         ctx.textAlign = 'center';
-        ctx.fillText('💫', 0, -50);
+        ctx.fillText('💫', 0, -35 * playerCarScale);
     }
 
     ctx.restore();
