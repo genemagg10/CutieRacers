@@ -242,7 +242,6 @@ class Racer {
         if (this.isPlayer) {
             // Player controls (keyboard + touch)
             const gasPressed = keys['ArrowUp'] || keys['w'] || keys['W'] || touchButtons.gas.active;
-            const brakePressed = keys['ArrowDown'] || keys['s'] || keys['S'] || touchButtons.brake.active;
             const leftPressed = keys['ArrowLeft'] || keys['a'] || keys['A'] || touchButtons.left.active;
             const rightPressed = keys['ArrowRight'] || keys['d'] || keys['D'] || touchButtons.right.active;
 
@@ -250,11 +249,7 @@ class Racer {
                 this.speed += this.accel * dt * 60;
             } else {
                 // Gentle coast-down when not pressing gas
-                this.speed *= (1 - 0.4 * dt);
-            }
-            if (brakePressed) {
-                this.speed -= this.accel * 2.5 * dt * 60;
-                if (this.speed < 0) this.speed = 0;
+                this.speed *= (1 - 0.25 * dt);
             }
             if (leftPressed) {
                 this.steerInput = -1;
@@ -299,10 +294,9 @@ class Racer {
         // Clamp speed
         this.speed = Math.max(0, Math.min(this.speed, this.maxSpeed));
 
-        // Apply steering with curve influence
-        const steerForce = this.steerInput * this.handling * 0.055 * dt * 60;
-        const curveForce = seg.curve * this.speed * 0.00004 * dt * 60;
-        this.x += steerForce + curveForce;
+        // Apply steering (visual road curve naturally requires player to steer into turns)
+        const steerForce = this.steerInput * this.handling * 0.08 * dt * 60;
+        this.x += steerForce;
 
         // Off-road penalty
         if (Math.abs(this.x) > 0.8) {
@@ -430,10 +424,9 @@ canvas.addEventListener('mouseup', () => { mouseDown = false; });
 // ============================================================
 // Virtual button definitions (in canvas coordinates)
 const touchButtons = {
-    left:  { x: 20,  y: H - 140, w: 80, h: 80, active: false, label: '◀' },
-    right: { x: 110, y: H - 140, w: 80, h: 80, active: false, label: '▶' },
-    gas:   { x: W - 100, y: H - 220, w: 80, h: 80, active: false, label: '▲' },
-    brake: { x: W - 100, y: H - 130, w: 80, h: 80, active: false, label: '▼' },
+    left:  { x: 20,  y: H - 160, w: 100, h: 100, active: false, label: '◀' },
+    right: { x: 130, y: H - 160, w: 100, h: 100, active: false, label: '▶' },
+    gas:   { x: W - 160, y: H - 200, w: 140, h: 140, active: false, label: 'GO' },
     item:  { x: W / 2 - 40, y: H - 145, w: 80, h: 65, active: false, label: '🎯' }
 };
 let activeTouches = {};
@@ -684,9 +677,9 @@ function drawTitle() {
     ctx.fillStyle = 'rgba(255,255,255,0.6)';
     ctx.font = '16px Segoe UI, sans-serif';
     if (isMobile) {
-        ctx.fillText('Touch controls to steer, accelerate & use items', W / 2, 420);
+        ctx.fillText('Tap GO to drive, arrows to steer, center to use items!', W / 2, 420);
     } else {
-        ctx.fillText('Arrow Keys / WASD to drive  •  Space to use items', W / 2, 420);
+        ctx.fillText('↑ / W to go  •  ← → / A D to steer  •  Space for items', W / 2, 420);
     }
     ctx.fillText('Throw food to lure other animals off course!', W / 2, 445);
 }
@@ -2120,10 +2113,7 @@ function drawRacing(dt) {
     }
 
     // Brake flash
-    if ((keys['ArrowDown'] || keys['s'] || keys['S'] || touchButtons.brake.active) && player.speed > 100) {
-        ctx.fillStyle = 'rgba(255,50,50,0.06)';
-        ctx.fillRect(0, 0, W, H);
-    }
+    // (brake removed - single button controls)
 
     // === HUD ===
     // Race standings leaderboard
@@ -2275,44 +2265,47 @@ function drawTouchControls() {
     ctx.save();
 
     // Draw each virtual button
-    function drawVButton(btn, icon, color) {
+    function drawVButton(btn, icon, color, fontSize) {
         const alpha = btn.active ? 0.6 : 0.25;
+        const radius = btn.w / 2;
+        const cx = btn.x + btn.w / 2;
+        const cy = btn.y + btn.h / 2;
+
         // Button background
         ctx.fillStyle = `rgba(255,255,255,${alpha})`;
         ctx.beginPath();
-        ctx.arc(btn.x + btn.w / 2, btn.y + btn.h / 2, btn.w / 2, 0, Math.PI * 2);
+        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
         ctx.fill();
 
         // Border
         ctx.strokeStyle = `rgba(255,255,255,${alpha + 0.15})`;
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 3;
         ctx.beginPath();
-        ctx.arc(btn.x + btn.w / 2, btn.y + btn.h / 2, btn.w / 2, 0, Math.PI * 2);
+        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
         ctx.stroke();
 
         // Active glow
         if (btn.active) {
             ctx.fillStyle = `${color}44`;
             ctx.beginPath();
-            ctx.arc(btn.x + btn.w / 2, btn.y + btn.h / 2, btn.w / 2 + 5, 0, Math.PI * 2);
+            ctx.arc(cx, cy, radius + 8, 0, Math.PI * 2);
             ctx.fill();
         }
 
         // Icon
         ctx.fillStyle = btn.active ? color : 'rgba(255,255,255,0.7)';
-        ctx.font = 'bold 28px Segoe UI, sans-serif';
+        ctx.font = `bold ${fontSize || 32}px Segoe UI, sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(icon, btn.x + btn.w / 2, btn.y + btn.h / 2);
+        ctx.fillText(icon, cx, cy);
     }
 
-    // Steering buttons (left side)
-    drawVButton(touchButtons.left, '◀', '#4FC3F7');
-    drawVButton(touchButtons.right, '▶', '#4FC3F7');
+    // Steering buttons (left side) - bigger
+    drawVButton(touchButtons.left, '◀', '#4FC3F7', 36);
+    drawVButton(touchButtons.right, '▶', '#4FC3F7', 36);
 
-    // Gas/brake (right side)
-    drawVButton(touchButtons.gas, '▲', '#66BB6A');
-    drawVButton(touchButtons.brake, '▼', '#EF5350');
+    // Big GO button (right side) - much larger, easy to hold
+    drawVButton(touchButtons.gas, 'GO', '#66BB6A', 42);
 
     // Item button (center bottom) - draw as rounded rect
     const ib = touchButtons.item;
