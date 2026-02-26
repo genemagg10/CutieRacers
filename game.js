@@ -178,8 +178,8 @@ class Racer {
         this.isPlayer = isPlayer;
         this.position = 0; // track position (segment index * segLen + offset)
         this.speed = 0;
-        this.maxSpeed = character.speed * 25 + 100;
-        this.accel = character.accel * 15;
+        this.maxSpeed = character.speed * 200 + 800;
+        this.accel = character.accel * 120;
         this.handling = character.handling;
         this.x = 0; // lateral position (-1 to 1)
         this.lane = 0;
@@ -245,10 +245,12 @@ class Racer {
             if (gasPressed) {
                 this.speed += this.accel * dt * 60;
             } else {
-                this.speed -= this.accel * 0.3 * dt * 60;
+                // Gentle coast-down when not pressing gas
+                this.speed *= (1 - 0.4 * dt);
             }
             if (brakePressed) {
-                this.speed -= this.accel * 2 * dt * 60;
+                this.speed -= this.accel * 2.5 * dt * 60;
+                if (this.speed < 0) this.speed = 0;
             }
             if (leftPressed) {
                 this.steerInput = -1;
@@ -295,7 +297,7 @@ class Racer {
 
         // Apply steering with curve influence
         const steerForce = this.steerInput * this.handling * 0.03 * dt * 60;
-        const curveForce = seg.curve * this.speed * 0.0003 * dt * 60;
+        const curveForce = seg.curve * this.speed * 0.00004 * dt * 60;
         this.x += steerForce - curveForce;
 
         // Off-road penalty
@@ -1463,6 +1465,48 @@ function drawRacing(dt) {
 
     ctx.restore();
 
+    // === SPEED EFFECTS ===
+    const speedRatio = player.speed / player.maxSpeed;
+
+    // Speed lines at edges when going fast
+    if (speedRatio > 0.3) {
+        const lineAlpha = (speedRatio - 0.3) * 0.7;
+        const lineCount = Math.floor(speedRatio * 12);
+        ctx.save();
+        ctx.strokeStyle = `rgba(255,255,255,${lineAlpha})`;
+        ctx.lineWidth = 2;
+        for (let i = 0; i < lineCount; i++) {
+            const seed = (frameCount * 3 + i * 137) % 100;
+            const side = i % 2 === 0 ? 1 : -1;
+            const baseX = side > 0 ? W - 10 - seed * 0.8 : 10 + seed * 0.8;
+            const yStart = H * 0.3 + (seed * 4.7) % (H * 0.5);
+            const lineLen = 30 + speedRatio * 60;
+            ctx.globalAlpha = lineAlpha * (0.3 + (seed % 30) / 30 * 0.7);
+            ctx.beginPath();
+            ctx.moveTo(baseX, yStart);
+            ctx.lineTo(baseX + side * -15, yStart + lineLen);
+            ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+        ctx.restore();
+    }
+
+    // Vignette effect at high speeds
+    if (speedRatio > 0.6) {
+        const vigAlpha = (speedRatio - 0.6) * 0.3;
+        const grad = ctx.createRadialGradient(W / 2, H / 2, W * 0.3, W / 2, H / 2, W * 0.7);
+        grad.addColorStop(0, 'rgba(0,0,0,0)');
+        grad.addColorStop(1, `rgba(0,0,0,${vigAlpha})`);
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, W, H);
+    }
+
+    // Brake flash
+    if ((keys['ArrowDown'] || keys['s'] || keys['S'] || touchButtons.brake.active) && player.speed > 100) {
+        ctx.fillStyle = 'rgba(255,50,50,0.06)';
+        ctx.fillRect(0, 0, W, H);
+    }
+
     // === HUD ===
     // Position indicator
     ctx.fillStyle = 'rgba(0,0,0,0.6)';
@@ -1483,16 +1527,26 @@ function drawRacing(dt) {
     ctx.textAlign = 'center';
     ctx.fillText(`Lap ${Math.min(player.lap + 1, totalLaps)} / ${totalLaps}`, W / 2, 36);
 
-    // Speed
+    // Speed (color-coded by speed ratio)
     ctx.fillStyle = 'rgba(0,0,0,0.6)';
     roundRect(W - 140, 10, 130, 55, 10, true);
-    ctx.fillStyle = '#FFF';
+
+    // Speed bar background
+    ctx.fillStyle = 'rgba(255,255,255,0.1)';
+    roundRect(W - 134, 52, 118, 8, 4, true);
+    // Speed bar fill
+    const spdColor = speedRatio < 0.4 ? '#66BB6A' : speedRatio < 0.7 ? '#FDD835' : speedRatio < 0.9 ? '#FF9800' : '#F44336';
+    ctx.fillStyle = spdColor;
+    roundRect(W - 134, 52, 118 * speedRatio, 8, 4, true);
+
+    ctx.fillStyle = spdColor;
     ctx.font = 'bold 28px Segoe UI, sans-serif';
     ctx.textAlign = 'center';
-    const displaySpeed = Math.floor(player.speed * 1.8);
+    const displaySpeed = Math.floor(player.speed * 0.09);
     ctx.fillText(`${displaySpeed}`, W - 75, 38);
-    ctx.font = '13px Segoe UI, sans-serif';
-    ctx.fillText('km/h', W - 75, 56);
+    ctx.fillStyle = '#CCC';
+    ctx.font = '11px Segoe UI, sans-serif';
+    ctx.fillText('km/h', W - 75, 48);
 
     // Time
     ctx.fillStyle = 'rgba(0,0,0,0.6)';
