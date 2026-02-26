@@ -2,23 +2,32 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <title>Cutie Racers - Baby Animal Racing!</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
+        html, body {
             background: #1a0a2e;
             display: flex;
             justify-content: center;
             align-items: center;
+            width: 100%;
+            height: 100%;
             min-height: 100vh;
+            min-height: 100dvh;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             overflow: hidden;
+            touch-action: none;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
         }
         canvas {
             border-radius: 12px;
             box-shadow: 0 0 40px rgba(255, 150, 200, 0.3);
-            image-rendering: pixelated;
+            display: block;
         }
     </style>
 </head>

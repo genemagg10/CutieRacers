@@ -4,8 +4,33 @@
 
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
-const W = canvas.width;
-const H = canvas.height;
+const W = 900;
+const H = 600;
+canvas.width = W;
+canvas.height = H;
+
+// Mobile detection & responsive scaling
+const isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+    || ('ontouchstart' in window && window.innerWidth < 1024);
+
+function resizeCanvas() {
+    const windowW = window.innerWidth;
+    const windowH = window.innerHeight;
+    const aspect = W / H;
+    let displayW, displayH;
+    if (windowW / windowH > aspect) {
+        displayH = windowH;
+        displayW = displayH * aspect;
+    } else {
+        displayW = windowW;
+        displayH = displayW / aspect;
+    }
+    canvas.style.width = displayW + 'px';
+    canvas.style.height = displayH + 'px';
+}
+window.addEventListener('resize', resizeCanvas);
+window.addEventListener('orientationchange', () => setTimeout(resizeCanvas, 100));
+resizeCanvas();
 
 // ============================================================
 // GAME STATE
@@ -211,18 +236,23 @@ class Racer {
         const seg = track.segments[segIdx];
 
         if (this.isPlayer) {
-            // Player controls
-            if (keys['ArrowUp'] || keys['w'] || keys['W']) {
+            // Player controls (keyboard + touch)
+            const gasPressed = keys['ArrowUp'] || keys['w'] || keys['W'] || touchButtons.gas.active;
+            const brakePressed = keys['ArrowDown'] || keys['s'] || keys['S'] || touchButtons.brake.active;
+            const leftPressed = keys['ArrowLeft'] || keys['a'] || keys['A'] || touchButtons.left.active;
+            const rightPressed = keys['ArrowRight'] || keys['d'] || keys['D'] || touchButtons.right.active;
+
+            if (gasPressed) {
                 this.speed += this.accel * dt * 60;
             } else {
                 this.speed -= this.accel * 0.3 * dt * 60;
             }
-            if (keys['ArrowDown'] || keys['s'] || keys['S']) {
+            if (brakePressed) {
                 this.speed -= this.accel * 2 * dt * 60;
             }
-            if (keys['ArrowLeft'] || keys['a'] || keys['A']) {
+            if (leftPressed) {
                 this.steerInput = -1;
-            } else if (keys['ArrowRight'] || keys['d'] || keys['D']) {
+            } else if (rightPressed) {
                 this.steerInput = 1;
             } else {
                 this.steerInput = 0;
@@ -388,16 +418,106 @@ canvas.addEventListener('mousemove', e => {
 });
 canvas.addEventListener('mousedown', () => { mouseDown = true; mouseClicked = true; });
 canvas.addEventListener('mouseup', () => { mouseDown = false; });
+
+// ============================================================
+// TOUCH CONTROLS
+// ============================================================
+// Virtual button definitions (in canvas coordinates)
+const touchButtons = {
+    left:  { x: 20,  y: H - 140, w: 80, h: 80, active: false, label: '◀' },
+    right: { x: 110, y: H - 140, w: 80, h: 80, active: false, label: '▶' },
+    gas:   { x: W - 100, y: H - 220, w: 80, h: 80, active: false, label: '▲' },
+    brake: { x: W - 100, y: H - 130, w: 80, h: 80, active: false, label: '▼' },
+    item:  { x: W / 2 - 40, y: H - 145, w: 80, h: 65, active: false, label: '🎯' }
+};
+let activeTouches = {};
+
+function canvasCoords(touch) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+        x: (touch.clientX - rect.left) * (W / rect.width),
+        y: (touch.clientY - rect.top) * (H / rect.height)
+    };
+}
+
+function hitTest(tx, ty, btn) {
+    // Generous hit area for touch (20px padding)
+    const pad = 20;
+    return tx >= btn.x - pad && tx <= btn.x + btn.w + pad &&
+           ty >= btn.y - pad && ty <= btn.y + btn.h + pad;
+}
+
+function updateTouchButtons() {
+    // Reset all buttons
+    for (const key in touchButtons) touchButtons[key].active = false;
+
+    // Check each active touch against buttons
+    for (const id in activeTouches) {
+        const t = activeTouches[id];
+        for (const key in touchButtons) {
+            if (hitTest(t.x, t.y, touchButtons[key])) {
+                touchButtons[key].active = true;
+            }
+        }
+    }
+}
+
 canvas.addEventListener('touchstart', e => {
     e.preventDefault();
-    const rect = canvas.getBoundingClientRect();
-    const touch = e.touches[0];
-    mouseX = (touch.clientX - rect.left) * (W / rect.width);
-    mouseY = (touch.clientY - rect.top) * (H / rect.height);
+    for (const touch of e.changedTouches) {
+        const coords = canvasCoords(touch);
+        activeTouches[touch.identifier] = coords;
+    }
+    // Use first touch for menu interactions
+    const first = canvasCoords(e.changedTouches[0]);
+    mouseX = first.x;
+    mouseY = first.y;
     mouseDown = true;
     mouseClicked = true;
-});
-canvas.addEventListener('touchend', e => { e.preventDefault(); mouseDown = false; });
+
+    updateTouchButtons();
+
+    // Item use on touch
+    if ((gameState === 'racing' || gameState === 'countdown') && isMobile && player) {
+        if (touchButtons.item.active) {
+            player.useItem();
+        }
+    }
+}, { passive: false });
+
+canvas.addEventListener('touchmove', e => {
+    e.preventDefault();
+    for (const touch of e.changedTouches) {
+        const coords = canvasCoords(touch);
+        activeTouches[touch.identifier] = coords;
+    }
+    // Update mouse pos for menu hover states
+    const first = canvasCoords(e.touches[0]);
+    mouseX = first.x;
+    mouseY = first.y;
+
+    updateTouchButtons();
+}, { passive: false });
+
+canvas.addEventListener('touchend', e => {
+    e.preventDefault();
+    for (const touch of e.changedTouches) {
+        delete activeTouches[touch.identifier];
+    }
+    if (e.touches.length === 0) {
+        mouseDown = false;
+        activeTouches = {};
+    }
+    updateTouchButtons();
+}, { passive: false });
+
+canvas.addEventListener('touchcancel', e => {
+    e.preventDefault();
+    for (const touch of e.changedTouches) {
+        delete activeTouches[touch.identifier];
+    }
+    updateTouchButtons();
+}, { passive: false });
 
 // ============================================================
 // UI HELPERS
@@ -548,7 +668,11 @@ function drawTitle() {
     // Instructions
     ctx.fillStyle = 'rgba(255,255,255,0.6)';
     ctx.font = '16px Segoe UI, sans-serif';
-    ctx.fillText('Arrow Keys / WASD to drive  •  Space to use items', W / 2, 420);
+    if (isMobile) {
+        ctx.fillText('Touch controls to steer, accelerate & use items', W / 2, 420);
+    } else {
+        ctx.fillText('Arrow Keys / WASD to drive  •  Space to use items', W / 2, 420);
+    }
     ctx.fillText('Throw food to lure other animals off course!', W / 2, 445);
 }
 
@@ -1381,32 +1505,39 @@ function drawRacing(dt) {
     const ms = Math.floor((raceTime % 1) * 100);
     ctx.fillText(`${mins}:${secs.toString().padStart(2, '0')}.${ms.toString().padStart(2, '0')}`, 180, 33);
 
-    // Item box
-    ctx.fillStyle = 'rgba(0,0,0,0.6)';
-    roundRect(W / 2 - 30, H - 70, 60, 60, 10, true);
-    if (player.item) {
-        const itemEmojis = {
-            carrot: '🥕', fish: '🐟', bone: '🦴', bread: '🍞',
-            bamboo: '🎋', boost: '⚡', banana: '🍌', star: '⭐'
-        };
-        ctx.font = '32px serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(itemEmojis[player.item] || '❓', W / 2, H - 40);
+    // Item box (only show keyboard-style HUD on desktop; mobile uses touch button)
+    if (!isMobile) {
+        ctx.fillStyle = 'rgba(0,0,0,0.6)';
+        roundRect(W / 2 - 30, H - 70, 60, 60, 10, true);
+        if (player.item) {
+            const itemEmojis = {
+                carrot: '🥕', fish: '🐟', bone: '🦴', bread: '🍞',
+                bamboo: '🎋', boost: '⚡', banana: '🍌', star: '⭐'
+            };
+            ctx.font = '32px serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(itemEmojis[player.item] || '❓', W / 2, H - 40);
 
-        ctx.fillStyle = 'rgba(255,255,255,0.5)';
-        ctx.font = '10px sans-serif';
-        ctx.fillText('[SPACE]', W / 2, H - 15);
-    } else {
-        ctx.fillStyle = 'rgba(255,255,255,0.2)';
-        ctx.font = '24px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('?', W / 2, H - 40);
+            ctx.fillStyle = 'rgba(255,255,255,0.5)';
+            ctx.font = '10px sans-serif';
+            ctx.fillText('[SPACE]', W / 2, H - 15);
+        } else {
+            ctx.fillStyle = 'rgba(255,255,255,0.2)';
+            ctx.font = '24px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('?', W / 2, H - 40);
+        }
     }
 
-    // Mini map
+    // Mini map (repositioned on mobile to avoid touch controls)
     drawMiniMap();
+
+    // Mobile touch controls
+    if (isMobile) {
+        drawTouchControls();
+    }
 
     // Countdown overlay
     if (gameState === 'countdown') {
@@ -1440,10 +1571,83 @@ function drawRacing(dt) {
     }
 }
 
+function drawTouchControls() {
+    ctx.save();
+
+    // Draw each virtual button
+    function drawVButton(btn, icon, color) {
+        const alpha = btn.active ? 0.6 : 0.25;
+        // Button background
+        ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+        ctx.beginPath();
+        ctx.arc(btn.x + btn.w / 2, btn.y + btn.h / 2, btn.w / 2, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Border
+        ctx.strokeStyle = `rgba(255,255,255,${alpha + 0.15})`;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(btn.x + btn.w / 2, btn.y + btn.h / 2, btn.w / 2, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Active glow
+        if (btn.active) {
+            ctx.fillStyle = `${color}44`;
+            ctx.beginPath();
+            ctx.arc(btn.x + btn.w / 2, btn.y + btn.h / 2, btn.w / 2 + 5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Icon
+        ctx.fillStyle = btn.active ? color : 'rgba(255,255,255,0.7)';
+        ctx.font = 'bold 28px Segoe UI, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(icon, btn.x + btn.w / 2, btn.y + btn.h / 2);
+    }
+
+    // Steering buttons (left side)
+    drawVButton(touchButtons.left, '◀', '#4FC3F7');
+    drawVButton(touchButtons.right, '▶', '#4FC3F7');
+
+    // Gas/brake (right side)
+    drawVButton(touchButtons.gas, '▲', '#66BB6A');
+    drawVButton(touchButtons.brake, '▼', '#EF5350');
+
+    // Item button (center bottom) - draw as rounded rect
+    const ib = touchButtons.item;
+    const ibAlpha = ib.active ? 0.6 : 0.3;
+    ctx.fillStyle = `rgba(255,255,255,${ibAlpha})`;
+    roundRect(ib.x, ib.y, ib.w, ib.h, 14, true);
+    ctx.strokeStyle = `rgba(255,255,255,${ibAlpha + 0.15})`;
+    ctx.lineWidth = 2;
+    roundRect(ib.x, ib.y, ib.w, ib.h, 14, false);
+
+    if (player && player.item) {
+        const itemEmojis = {
+            carrot: '🥕', fish: '🐟', bone: '🦴', bread: '🍞',
+            bamboo: '🎋', boost: '⚡', banana: '🍌', star: '⭐'
+        };
+        ctx.font = '26px serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(itemEmojis[player.item] || '❓', ib.x + ib.w / 2, ib.y + ib.h / 2);
+    } else {
+        ctx.fillStyle = 'rgba(255,255,255,0.4)';
+        ctx.font = '14px Segoe UI, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('ITEM', ib.x + ib.w / 2, ib.y + ib.h / 2);
+    }
+
+    ctx.restore();
+}
+
 function drawMiniMap() {
-    const mapX = W - 130;
-    const mapY = H - 130;
-    const mapSize = 110;
+    // On mobile, move minimap up to avoid touch controls
+    const mapX = isMobile ? W - 120 : W - 130;
+    const mapY = isMobile ? 70 : H - 130;
+    const mapSize = isMobile ? 85 : 110;
 
     ctx.fillStyle = 'rgba(0,0,0,0.5)';
     ctx.beginPath();
