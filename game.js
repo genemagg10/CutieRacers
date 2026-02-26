@@ -302,7 +302,7 @@ class Racer {
         // Apply steering with curve influence
         const steerForce = this.steerInput * this.handling * 0.055 * dt * 60;
         const curveForce = seg.curve * this.speed * 0.00004 * dt * 60;
-        this.x += steerForce - curveForce;
+        this.x += steerForce + curveForce;
 
         // Off-road penalty
         if (Math.abs(this.x) > 0.8) {
@@ -847,6 +847,14 @@ function drawKawaiiAnimal(x, y, scale, character, design) {
         'bunny': '#FFD4E0', 'kitten': '#FFE0C0', 'duckling': '#FFF3A0',
         'puppy': '#D4A574', 'panda': '#F8F8F8', 'penguin': '#2A2A3A'
     };
+    const irisColors = {
+        'bunny': '#CC3366', 'kitten': '#44AA55', 'duckling': '#332211',
+        'puppy': '#553311', 'panda': '#333333', 'penguin': '#334455'
+    };
+    const irisHighlightColors = {
+        'bunny': '#FF6699', 'kitten': '#66CC88', 'duckling': '#665544',
+        'puppy': '#886644', 'panda': '#555555', 'penguin': '#556688'
+    };
     const headColor = character ? headColors[character.animal] || '#FFD4E0' : '#FFD4E0';
     const darkColor = character ? character.darkColor || '#333' : '#333';
     const animal = character ? character.animal : 'bunny';
@@ -854,70 +862,92 @@ function drawKawaiiAnimal(x, y, scale, character, design) {
     // -- EARS (drawn behind head) --
     ctx.fillStyle = headColor;
     if (animal === 'bunny') {
-        // Long floppy bunny ears
+        // Long floppy bunny ears - taller and wider
         ctx.fillStyle = headColor;
-        for (let ey = -28; ey < -10; ey += p) { px(-9, ey, p); px(-7, ey, p); px(7, ey, p); px(9, ey, p); }
+        for (let ey = -38; ey < -14; ey += p) {
+            px(-10, ey, p); px(-8, ey, p); px(-6, ey, p);
+            px(6, ey, p); px(8, ey, p); px(10, ey, p);
+        }
         // Inner ear pink
         ctx.fillStyle = '#FFB0C4';
-        for (let ey = -26; ey < -12; ey += p) { px(-8, ey, p); px(8, ey, p); }
+        for (let ey = -36; ey < -16; ey += p) { px(-8, ey, p); px(8, ey, p); }
     } else if (animal === 'kitten') {
-        // Pointy cat ears
+        // Pointy cat ears - bigger triangles
         ctx.fillStyle = headColor;
-        px(-11, -14, p); px(-9, -16, p); px(-7, -18, p); px(-9, -14, p); px(-7, -14, p); px(-5, -14, p);
-        px(11, -14, p); px(9, -16, p); px(7, -18, p); px(9, -14, p); px(7, -14, p); px(5, -14, p);
+        // Left ear
+        px(-14, -16, p); px(-12, -16, p); px(-10, -16, p); px(-8, -16, p); px(-6, -16, p);
+        px(-13, -18, p); px(-11, -18, p); px(-9, -18, p); px(-7, -18, p);
+        px(-12, -20, p); px(-10, -20, p); px(-8, -20, p);
+        px(-11, -22, p); px(-9, -22, p);
+        px(-10, -24, p);
+        // Right ear
+        px(14, -16, p); px(12, -16, p); px(10, -16, p); px(8, -16, p); px(6, -16, p);
+        px(13, -18, p); px(11, -18, p); px(9, -18, p); px(7, -18, p);
+        px(12, -20, p); px(10, -20, p); px(8, -20, p);
+        px(11, -22, p); px(9, -22, p);
+        px(10, -24, p);
         // Inner ear pink
         ctx.fillStyle = '#FFB0C4';
-        px(-9, -15, p); px(-7, -15, p); px(9, -15, p); px(7, -15, p);
+        px(-11, -18, p); px(-9, -18, p); px(-10, -20, p);
+        px(11, -18, p); px(9, -18, p); px(10, -20, p);
     } else if (animal === 'puppy') {
-        // Floppy puppy ears
+        // Floppy puppy ears - bigger
         ctx.fillStyle = darkColor;
-        for (let ey = -10; ey < 4; ey += p) { px(-13, ey, p); px(-11, ey, p); px(13, ey, p); px(11, ey, p); }
-        px(-13, 4, p); px(13, 4, p);
+        for (let ey = -12; ey < 8; ey += p) {
+            px(-16, ey, p); px(-14, ey, p); px(-12, ey, p);
+            px(12, ey, p); px(14, ey, p); px(16, ey, p);
+        }
+        // Rounded bottom
+        px(-14, 8, p); px(14, 8, p);
     } else if (animal === 'panda') {
-        // Round panda ears
+        // Round panda ears - bigger
         ctx.fillStyle = '#222';
-        px(-10, -14, p); px(-8, -14, p); px(-10, -12, p); px(-8, -12, p);
-        px(10, -14, p); px(8, -14, p); px(10, -12, p); px(8, -12, p);
+        for (let ey = -18; ey <= -12; ey += p) {
+            px(-12, ey, p); px(-10, ey, p); px(-8, ey, p);
+            px(8, ey, p); px(10, ey, p); px(12, ey, p);
+        }
     } else if (animal === 'penguin') {
-        // No visible ears, just the top of head extends
+        // No visible ears
     } else if (animal === 'duckling') {
-        // Tiny fluff tuft
+        // Fluffy tuft on top - bigger
         ctx.fillStyle = '#FFD700';
-        px(-2, -16, p); px(0, -18, p); px(2, -16, p);
+        px(-2, -20, p); px(0, -22, p); px(2, -20, p);
+        px(-4, -18, p); px(0, -20, p); px(4, -18, p);
     }
 
     // -- HEAD/BODY (big round chibi head = body) --
     ctx.fillStyle = headColor;
     if (bodyShape === 0) {
-        // Round (default kawaii)
-        for (let row = -12; row <= 10; row += p) {
-            const halfW = row < -8 ? 6 : row < -4 ? 10 : row < 4 ? 12 : row < 8 ? 10 : 8;
+        // Round (default kawaii) - bigger
+        for (let row = -14; row <= 14; row += p) {
+            const t = (row + 14) / 28;
+            const halfW = Math.round(Math.sin(t * Math.PI) * 16);
             for (let col = -halfW; col <= halfW; col += p) {
                 px(col, row, p);
             }
         }
     } else if (bodyShape === 1) {
         // Tall/egg
-        for (let row = -14; row <= 10; row += p) {
-            const t = (row + 14) / 24;
-            const halfW = Math.round(Math.sin(t * Math.PI) * 11);
+        for (let row = -18; row <= 14; row += p) {
+            const t = (row + 18) / 32;
+            const halfW = Math.round(Math.sin(t * Math.PI) * 14);
             for (let col = -halfW; col <= halfW; col += p) {
                 px(col, row, p);
             }
         }
     } else if (bodyShape === 2) {
-        // Chubby square with softer edges
-        for (let row = -10; row <= 10; row += p) {
-            const halfW = (row === -10 || row === 10) ? 9 : 11;
+        // Chubby square
+        for (let row = -12; row <= 14; row += p) {
+            const halfW = (row <= -10 || row >= 12) ? 12 : 15;
             for (let col = -halfW; col <= halfW; col += p) {
                 px(col, row, p);
             }
         }
     } else {
         // Bean/blob
-        for (let row = -12; row <= 12; row += p) {
-            const t = (row + 12) / 24;
-            const halfW = Math.round((Math.sin(t * Math.PI) * 10 + Math.sin(t * Math.PI * 2) * 2));
+        for (let row = -14; row <= 16; row += p) {
+            const t = (row + 14) / 30;
+            const halfW = Math.round((Math.sin(t * Math.PI) * 14 + Math.sin(t * Math.PI * 2) * 3));
             for (let col = -halfW; col <= halfW; col += p) {
                 px(col, row, p);
             }
@@ -927,14 +957,14 @@ function drawKawaiiAnimal(x, y, scale, character, design) {
     // Belly patch for some animals
     if (animal === 'penguin') {
         ctx.fillStyle = '#E8E8F0';
-        for (let row = -2; row <= 8; row += p) {
-            const halfW = row < 2 ? 6 : row < 6 ? 8 : 6;
+        for (let row = 0; row <= 12; row += p) {
+            const halfW = row < 4 ? 8 : row < 8 ? 10 : 8;
             for (let col = -halfW; col <= halfW; col += p) { px(col, row, p); }
         }
     } else if (animal === 'panda') {
         ctx.fillStyle = '#FFF';
-        for (let row = -2; row <= 6; row += p) {
-            for (let col = -6; col <= 6; col += p) { px(col, row, p); }
+        for (let row = 0; row <= 10; row += p) {
+            for (let col = -8; col <= 8; col += p) { px(col, row, p); }
         }
     }
 
@@ -942,163 +972,241 @@ function drawKawaiiAnimal(x, y, scale, character, design) {
     ctx.fillStyle = headColor;
     if (animal === 'penguin') ctx.fillStyle = '#2A2A3A';
     // Left arm/paw
-    px(-13, 2, p); px(-13, 4, p);
+    px(-17, 4, p); px(-17, 6, p); px(-17, 8, p);
     // Right arm/paw
-    px(13, 2, p); px(13, 4, p);
+    px(17, 4, p); px(17, 6, p); px(17, 8, p);
     // Feet
-    if (animal === 'duckling') {
-        ctx.fillStyle = '#FF9800';
-    } else if (animal === 'penguin') {
+    if (animal === 'duckling' || animal === 'penguin') {
         ctx.fillStyle = '#FF9800';
     } else {
         ctx.fillStyle = headColor;
     }
-    px(-6, 12, p); px(-4, 12, p); px(4, 12, p); px(6, 12, p);
+    px(-8, 16, p); px(-6, 16, p); px(-4, 16, p);
+    px(4, 16, p); px(6, 16, p); px(8, 16, p);
 
-    // Duck bill
+    // Duck bill (drawn before eyes so it's behind the face)
     if (animal === 'duckling') {
         ctx.fillStyle = '#FF9800';
-        px(-3, 2, p); px(-1, 2, p); px(1, 2, p); px(3, 2, p);
-        px(-2, 4, p); px(0, 4, p); px(2, 4, p);
+        px(-4, 4, p); px(-2, 4, p); px(0, 4, p); px(2, 4, p); px(4, 4, p);
+        px(-3, 6, p); px(-1, 6, p); px(1, 6, p); px(3, 6, p);
     }
 
-    // -- EYES (huge kawaii eyes - THE key feature) --
-    if (eyeStyle === 0) {
-        // Sparkle eyes (default - huge with double highlight)
-        // White base (big!)
-        ctx.fillStyle = '#FFF';
-        for (let ey = -8; ey <= -2; ey += p) {
-            for (let ex = -8; ex <= -2; ex += p) { px(ex, ey, p); }
-            for (let ex = 2; ex <= 8; ex += p) { px(ex, ey, p); }
-        }
-        // Colored iris
-        const irisColor = animal === 'duckling' ? '#222' : animal === 'panda' ? '#333' :
-            animal === 'penguin' ? '#334' : '#443322';
-        ctx.fillStyle = irisColor;
-        for (let ey = -7; ey <= -3; ey += p) {
-            for (let ex = -7; ex <= -3; ex += p) { px(ex, ey, p); }
-            for (let ex = 3; ex <= 7; ex += p) { px(ex, ey, p); }
-        }
-        // Big sparkle highlight (top-left of each eye)
-        ctx.fillStyle = '#FFF';
-        px(-7, -7, p); px(-7, -5, p); px(-5, -7, p);
-        px(3, -7, p); px(3, -5, p); px(5, -7, p);
-        // Small sparkle (bottom-right)
-        px(-3, -3, p);
-        px(7, -3, p);
-    } else if (eyeStyle === 1) {
-        // Happy closed eyes (upside-down arcs like ^_^)
-        ctx.fillStyle = '#222';
-        px(-7, -5, p); px(-5, -7, p); px(-3, -5, p);
-        px(3, -5, p); px(5, -7, p); px(7, -5, p);
-    } else if (eyeStyle === 2) {
-        // Heart eyes
-        ctx.fillStyle = '#FF4081';
-        // Left heart
-        px(-8, -7, p); px(-6, -7, p); px(-4, -7, p); px(-2, -7, p);
-        px(-8, -5, p); px(-6, -5, p); px(-4, -5, p); px(-2, -5, p);
-        px(-7, -3, p); px(-5, -3, p); px(-3, -3, p);
-        px(-6, -1, p); px(-4, -1, p);
-        px(-5, 1, p);
-        // Right heart
-        px(2, -7, p); px(4, -7, p); px(6, -7, p); px(8, -7, p);
-        px(2, -5, p); px(4, -5, p); px(6, -5, p); px(8, -5, p);
-        px(3, -3, p); px(5, -3, p); px(7, -3, p);
-        px(4, -1, p); px(6, -1, p);
-        px(5, 1, p);
-    } else {
-        // Big round dot eyes
-        ctx.fillStyle = '#222';
-        for (let ey = -7; ey <= -3; ey += p) {
-            for (let ex = -7; ex <= -3; ex += p) { px(ex, ey, p); }
-            for (let ex = 3; ex <= 7; ex += p) { px(ex, ey, p); }
-        }
-        // Single highlight
-        ctx.fillStyle = '#FFF';
-        px(-6, -6, p); px(4, -6, p);
-    }
-
-    // Panda eye patches
+    // Panda eye patches (drawn before eyes)
     if (animal === 'panda') {
         ctx.fillStyle = '#333';
-        px(-9, -8, p); px(-9, -6, p); px(-9, -4, p); px(-9, -2, p);
-        px(-1, -8, p); px(-1, -6, p); px(-1, -4, p); px(-1, -2, p);
-        px(1, -8, p); px(1, -6, p); px(1, -4, p); px(1, -2, p);
-        px(9, -8, p); px(9, -6, p); px(9, -4, p); px(9, -2, p);
+        // Left patch
+        for (let ey = -10; ey <= 0; ey += p) {
+            for (let ex = -14; ex <= -2; ex += p) { px(ex, ey, p); }
+        }
+        // Right patch
+        for (let ey = -10; ey <= 0; ey += p) {
+            for (let ex = 2; ex <= 14; ex += p) { px(ex, ey, p); }
+        }
+    }
+
+    // ====== EYES (HUGE kawaii eyes - THE dominant feature) ======
+    // Eyes span from roughly y=-12 to y=2 and x=-14 to x=14
+    // Each eye is about 10px wide, 14px tall - nearly half the face
+    const eyeL = -8;  // left eye center X
+    const eyeR = 8;   // right eye center X
+    const eyeY = -5;  // eye center Y
+
+    if (eyeStyle === 0) {
+        // === SPARKLE EYES (default) - huge with gradient iris + double highlight ===
+        // White sclera base - oval shaped, very large
+        ctx.fillStyle = '#FFF';
+        [-1, 1].forEach(side => {
+            const cx = side === -1 ? eyeL : eyeR;
+            for (let ey = -7; ey <= 7; ey += p) {
+                const t = (ey + 7) / 14;
+                const halfW = Math.round(Math.sin(t * Math.PI) * 6);
+                for (let ex = -halfW; ex <= halfW; ex += p) {
+                    px(cx + ex, eyeY + ey, p);
+                }
+            }
+        });
+
+        // Dark iris/pupil - large circle filling most of the eye
+        const irisColor = irisColors[animal] || '#443322';
+        const irisHi = irisHighlightColors[animal] || '#775544';
+        [-1, 1].forEach(side => {
+            const cx = side === -1 ? eyeL : eyeR;
+            // Main dark iris
+            ctx.fillStyle = irisColor;
+            for (let ey = -5; ey <= 5; ey += p) {
+                const t = (ey + 5) / 10;
+                const halfW = Math.round(Math.sin(t * Math.PI) * 5);
+                for (let ex = -halfW; ex <= halfW; ex += p) {
+                    px(cx + ex, eyeY + ey, p);
+                }
+            }
+            // Lighter iris ring at top
+            ctx.fillStyle = irisHi;
+            for (let ex = -3; ex <= 3; ex += p) { px(cx + ex, eyeY - 4, p); }
+            for (let ex = -4; ex <= 4; ex += p) { px(cx + ex, eyeY - 2, p); }
+
+            // BIG white highlight (top-left, 3x3 block)
+            ctx.fillStyle = '#FFF';
+            px(cx - 3, eyeY - 4, p); px(cx - 1, eyeY - 4, p);
+            px(cx - 3, eyeY - 2, p); px(cx - 1, eyeY - 2, p);
+            px(cx - 3, eyeY, p);
+
+            // Small white highlight (bottom-right, 1x1)
+            px(cx + 3, eyeY + 2, p);
+            px(cx + 3, eyeY + 4, p);
+        });
+
+    } else if (eyeStyle === 1) {
+        // === HAPPY CLOSED EYES (^_^) - thick arcs ===
+        ctx.fillStyle = '#222';
+        [-1, 1].forEach(side => {
+            const cx = side === -1 ? eyeL : eyeR;
+            // Thick upward arc
+            px(cx - 5, eyeY, p); px(cx - 3, eyeY - 2, p); px(cx - 1, eyeY - 4, p);
+            px(cx + 1, eyeY - 4, p); px(cx + 3, eyeY - 2, p); px(cx + 5, eyeY, p);
+            // Second row for thickness
+            px(cx - 4, eyeY - 2, p); px(cx - 2, eyeY - 4, p);
+            px(cx + 2, eyeY - 4, p); px(cx + 4, eyeY - 2, p);
+        });
+
+    } else if (eyeStyle === 2) {
+        // === HEART EYES - large pixel hearts ===
+        ctx.fillStyle = '#FF4081';
+        [-1, 1].forEach(side => {
+            const cx = side === -1 ? eyeL : eyeR;
+            // Row -6: two bumps of heart
+            px(cx - 4, eyeY - 6, p); px(cx - 2, eyeY - 6, p);
+            px(cx + 2, eyeY - 6, p); px(cx + 4, eyeY - 6, p);
+            // Row -4: full width
+            px(cx - 5, eyeY - 4, p); px(cx - 3, eyeY - 4, p); px(cx - 1, eyeY - 4, p);
+            px(cx + 1, eyeY - 4, p); px(cx + 3, eyeY - 4, p); px(cx + 5, eyeY - 4, p);
+            // Row -2
+            px(cx - 5, eyeY - 2, p); px(cx - 3, eyeY - 2, p); px(cx - 1, eyeY - 2, p);
+            px(cx + 1, eyeY - 2, p); px(cx + 3, eyeY - 2, p); px(cx + 5, eyeY - 2, p);
+            // Row 0: narrowing
+            px(cx - 4, eyeY, p); px(cx - 2, eyeY, p); px(cx, eyeY, p);
+            px(cx + 2, eyeY, p); px(cx + 4, eyeY, p);
+            // Row 2
+            px(cx - 3, eyeY + 2, p); px(cx - 1, eyeY + 2, p); px(cx + 1, eyeY + 2, p); px(cx + 3, eyeY + 2, p);
+            // Row 4
+            px(cx - 2, eyeY + 4, p); px(cx, eyeY + 4, p); px(cx + 2, eyeY + 4, p);
+            // Row 6: point
+            px(cx, eyeY + 6, p);
+
+            // Highlight on heart
+            ctx.fillStyle = '#FF80AA';
+            px(cx - 3, eyeY - 4, p);
+            ctx.fillStyle = '#FF4081';
+        });
+
+    } else {
+        // === BIG ROUND EYES with single highlight ===
+        [-1, 1].forEach(side => {
+            const cx = side === -1 ? eyeL : eyeR;
+            // Large black circle
+            ctx.fillStyle = '#222';
+            for (let ey = -6; ey <= 6; ey += p) {
+                const t = (ey + 6) / 12;
+                const halfW = Math.round(Math.sin(t * Math.PI) * 6);
+                for (let ex = -halfW; ex <= halfW; ex += p) {
+                    px(cx + ex, eyeY + ey, p);
+                }
+            }
+            // Big white highlight
+            ctx.fillStyle = '#FFF';
+            px(cx - 3, eyeY - 4, p); px(cx - 1, eyeY - 4, p);
+            px(cx - 3, eyeY - 2, p);
+            // Small highlight
+            px(cx + 2, eyeY + 2, p);
+        });
     }
 
     // -- NOSE --
-    if (animal !== 'duckling') {
-        if (animal === 'puppy' || animal === 'kitten') {
-            ctx.fillStyle = animal === 'puppy' ? '#222' : '#FF8899';
-            px(-1, 1, p); px(1, 1, p); px(0, 0, p);
-        } else {
-            ctx.fillStyle = '#FF9999';
-            px(0, 1, p);
-        }
+    if (animal === 'duckling') {
+        // Bill already drawn
+    } else if (animal === 'penguin') {
+        ctx.fillStyle = '#FF9800';
+        px(-2, 4, p); px(0, 4, p); px(2, 4, p);
+        px(-1, 6, p); px(1, 6, p);
+    } else if (animal === 'puppy' || animal === 'kitten') {
+        ctx.fillStyle = animal === 'puppy' ? '#222' : '#FF8899';
+        px(-2, 4, p); px(0, 4, p); px(2, 4, p);
+        px(-1, 3, p); px(1, 3, p);
+    } else {
+        ctx.fillStyle = '#FF9999';
+        px(-1, 4, p); px(1, 4, p);
     }
 
     // -- MOUTH --
     ctx.fillStyle = '#555';
     if (mouthStyle === 0) {
         // Tiny smile
-        px(-2, 3, p); px(0, 4, p); px(2, 3, p);
+        px(-3, 7, p); px(-1, 8, p); px(1, 8, p); px(3, 7, p);
     } else if (mouthStyle === 1) {
-        // Open happy mouth - "o"
+        // Open happy mouth - round "o"
         ctx.fillStyle = '#FF6B6B';
-        px(-1, 3, p); px(1, 3, p); px(-1, 5, p); px(1, 5, p);
+        px(-2, 7, p); px(0, 7, p); px(2, 7, p);
+        px(-2, 9, p); px(0, 9, p); px(2, 9, p);
         ctx.fillStyle = '#FF9999';
-        px(0, 4, p);
+        px(0, 8, p);
     } else if (mouthStyle === 2) {
         // Cat mouth w
         ctx.fillStyle = '#555';
-        px(-3, 3, p); px(-1, 5, p); px(0, 3, p); px(1, 5, p); px(3, 3, p);
+        px(-4, 7, p); px(-2, 9, p); px(0, 7, p); px(2, 9, p); px(4, 7, p);
     } else {
         // Blep tongue
         ctx.fillStyle = '#555';
-        px(-2, 3, p); px(0, 4, p); px(2, 3, p);
+        px(-3, 7, p); px(-1, 8, p); px(1, 8, p); px(3, 7, p);
         ctx.fillStyle = '#FF7088';
-        px(0, 5, p); px(0, 7, p);
+        px(-1, 9, p); px(1, 9, p); px(0, 11, p);
     }
 
-    // -- CHEEKS/BLUSH (using the nose slot as cheek style) --
+    // -- CHEEKS/BLUSH --
     if (cheekStyle === 0) {
-        // Round rosy cheeks
+        // Round rosy cheeks - bigger
         ctx.fillStyle = 'rgba(255,130,140,0.55)';
-        px(-10, 0, p); px(-10, 2, p); px(-8, 0, p); px(-8, 2, p);
-        px(8, 0, p); px(8, 2, p); px(10, 0, p); px(10, 2, p);
+        for (let ey = 2; ey <= 6; ey += p) {
+            px(-14, ey, p); px(-12, ey, p);
+            px(12, ey, p); px(14, ey, p);
+        }
     } else if (cheekStyle === 1) {
         // Heart blush
         ctx.fillStyle = 'rgba(255,100,130,0.5)';
-        px(-10, -1, p); px(-8, -1, p); px(-11, 1, p); px(-9, 1, p); px(-7, 1, p);
-        px(-10, 3, p); px(-8, 3, p); px(-9, 5, p);
-        px(8, -1, p); px(10, -1, p); px(7, 1, p); px(9, 1, p); px(11, 1, p);
-        px(8, 3, p); px(10, 3, p); px(9, 5, p);
+        // Left heart
+        px(-14, 1, p); px(-12, 1, p); px(-15, 3, p); px(-13, 3, p); px(-11, 3, p);
+        px(-14, 5, p); px(-12, 5, p); px(-13, 7, p);
+        // Right heart
+        px(12, 1, p); px(14, 1, p); px(11, 3, p); px(13, 3, p); px(15, 3, p);
+        px(12, 5, p); px(14, 5, p); px(13, 7, p);
     } else if (cheekStyle === 2) {
         // Star sparkle cheeks
-        ctx.fillStyle = 'rgba(255,210,100,0.6)';
-        px(-10, 0, p); px(-9, -1, p); px(-9, 1, p); px(-8, 0, p); px(-11, 0, p);
-        px(10, 0, p); px(9, -1, p); px(9, 1, p); px(8, 0, p); px(11, 0, p);
+        ctx.fillStyle = 'rgba(255,210,100,0.65)';
+        // Left star
+        px(-13, 2, p); px(-14, 4, p); px(-13, 4, p); px(-12, 4, p); px(-15, 4, p); px(-11, 4, p); px(-13, 6, p);
+        // Right star
+        px(13, 2, p); px(14, 4, p); px(13, 4, p); px(12, 4, p); px(15, 4, p); px(11, 4, p); px(13, 6, p);
     } else {
-        // Line blush (like anime // marks)
-        ctx.fillStyle = 'rgba(255,130,140,0.5)';
-        px(-10, -1, p); px(-9, 0, p); px(-8, 1, p);
-        px(-8, -1, p); px(-7, 0, p); px(-6, 1, p);
-        px(6, -1, p); px(7, 0, p); px(8, 1, p);
-        px(8, -1, p); px(9, 0, p); px(10, 1, p);
-    }
-
-    // Penguin beak
-    if (animal === 'penguin') {
-        ctx.fillStyle = '#FF9800';
-        px(-2, 1, p); px(0, 1, p); px(2, 1, p);
-        px(-1, 3, p); px(1, 3, p);
+        // Line blush (anime // marks)
+        ctx.fillStyle = 'rgba(255,130,140,0.55)';
+        px(-14, 1, p); px(-13, 3, p); px(-12, 5, p);
+        px(-12, 1, p); px(-11, 3, p); px(-10, 5, p);
+        px(10, 1, p); px(11, 3, p); px(12, 5, p);
+        px(12, 1, p); px(13, 3, p); px(14, 5, p);
     }
 
     // -- TAIL for some animals --
     if (animal === 'bunny') {
         ctx.fillStyle = '#FFF';
-        px(0, 11, p); px(-1, 12, p); px(1, 12, p);
+        px(-1, 14, p); px(0, 15, p); px(1, 14, p); px(0, 13, p);
+    }
+
+    // Whiskers for kitten
+    if (animal === 'kitten') {
+        ctx.fillStyle = '#AA9988';
+        // Left whiskers
+        px(-14, 3, p); px(-12, 4, p); px(-14, 5, p); px(-12, 6, p);
+        // Right whiskers
+        px(14, 3, p); px(12, 4, p); px(14, 5, p); px(12, 6, p);
     }
 
     ctx.imageSmoothingEnabled = true;
@@ -1717,9 +1825,9 @@ function drawRacing(dt) {
         // Item boxes
         if (seg.hasItem && n < 120) {
             const itemX = (p1.x + p2.x) / 2;
-            const itemY = p1.y - 30 * p1.scale;
-            const itemSize = Math.max(6, 40 * p1.scale);
-            const bob = Math.sin(frameCount * 0.08 + segIdx) * 5 * p1.scale;
+            const itemY = p1.y - 60 * p1.scale;
+            const itemSize = Math.max(10, 80 * p1.scale);
+            const bob = Math.sin(frameCount * 0.08 + segIdx) * 8 * p1.scale;
 
             // Glowing question box
             ctx.fillStyle = 'rgba(255,215,0,0.3)';
@@ -1739,57 +1847,78 @@ function drawRacing(dt) {
             ctx.restore();
         }
 
-        // Roadside palm trees and objects
+        // Roadside cherry blossom trees
         if (segIdx % 10 === 0 && n < 120) {
-            const objScale = p1.scale * 140;
-            if (objScale > 3) {
-                // Left palm tree
-                const treeX = p1.x - (p2.x - p1.x) * 0.15;
-                const treeY = p1.y;
-                ctx.save();
-                ctx.translate(treeX, treeY);
-                // Trunk
-                ctx.fillStyle = '#5D4037';
-                ctx.fillRect(-objScale * 0.08, -objScale * 2.5, objScale * 0.16, objScale * 2.5);
-                // Fronds
-                ctx.fillStyle = '#2E7D32';
-                for (let f = 0; f < 5; f++) {
-                    const angle = (f / 5) * Math.PI * 2;
-                    ctx.beginPath();
-                    ctx.ellipse(
-                        Math.cos(angle) * objScale * 0.6,
-                        -objScale * 2.5 + Math.sin(angle) * objScale * 0.3 - objScale * 0.3,
-                        objScale * 0.5, objScale * 0.12, angle * 0.3, 0, Math.PI * 2
-                    );
-                    ctx.fill();
-                }
-                ctx.restore();
+            const objScale = p1.scale * 280;
+            if (objScale > 5) {
+                const drawCherryTree = (treeX, treeY) => {
+                    ctx.save();
+                    ctx.translate(treeX, treeY);
 
-                // Right palm tree
-                const treeX2 = p2.x + (p2.x - p1.x) * 0.15;
-                ctx.save();
-                ctx.translate(treeX2, treeY);
-                ctx.fillStyle = '#5D4037';
-                ctx.fillRect(-objScale * 0.08, -objScale * 2.5, objScale * 0.16, objScale * 2.5);
-                ctx.fillStyle = '#2E7D32';
-                for (let f = 0; f < 5; f++) {
-                    const angle = (f / 5) * Math.PI * 2;
-                    ctx.beginPath();
-                    ctx.ellipse(
-                        Math.cos(angle) * objScale * 0.6,
-                        -objScale * 2.5 + Math.sin(angle) * objScale * 0.3 - objScale * 0.3,
-                        objScale * 0.5, objScale * 0.12, angle * 0.3, 0, Math.PI * 2
-                    );
-                    ctx.fill();
-                }
-                ctx.restore();
+                    // Trunk - dark brown, slightly curved
+                    ctx.fillStyle = '#5D3A1A';
+                    ctx.fillRect(-objScale * 0.06, -objScale * 2.2, objScale * 0.12, objScale * 2.2);
+                    // Branch left
+                    ctx.fillRect(-objScale * 0.5, -objScale * 1.8, objScale * 0.45, objScale * 0.05);
+                    // Branch right
+                    ctx.fillRect(objScale * 0.06, -objScale * 1.6, objScale * 0.4, objScale * 0.05);
+
+                    // Cherry blossom canopy - multiple pink/white clusters
+                    const blossomColors = ['#FFB7C5', '#FF9CAD', '#FFC0CB', '#FFD4DE', '#FFF0F3'];
+                    const sway = Math.sin(frameCount * 0.02 + treeX * 0.01) * objScale * 0.05;
+
+                    // Main canopy blobs
+                    const blobs = [
+                        [0, -2.4, 0.7], [-0.4, -2.1, 0.5], [0.35, -2.0, 0.55],
+                        [-0.2, -2.6, 0.45], [0.25, -2.5, 0.4], [-0.5, -1.9, 0.35],
+                        [0.5, -1.85, 0.3]
+                    ];
+                    blobs.forEach(([bx, by, br], i) => {
+                        ctx.fillStyle = blossomColors[i % blossomColors.length];
+                        ctx.beginPath();
+                        ctx.arc(
+                            bx * objScale + sway,
+                            by * objScale,
+                            br * objScale,
+                            0, Math.PI * 2
+                        );
+                        ctx.fill();
+                    });
+
+                    // Darker pink spots for depth
+                    ctx.fillStyle = 'rgba(255,120,150,0.3)';
+                    for (let i = 0; i < 6; i++) {
+                        const sx = (Math.sin(i * 2.5 + segIdx) * 0.3) * objScale + sway;
+                        const sy = (-2.1 - Math.cos(i * 1.7) * 0.4) * objScale;
+                        ctx.beginPath();
+                        ctx.arc(sx, sy, objScale * 0.15, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+
+                    // Falling petals
+                    ctx.fillStyle = '#FFB7C5';
+                    for (let i = 0; i < 3; i++) {
+                        const petalT = ((frameCount * 0.01 + i * 0.33 + segIdx * 0.1) % 1);
+                        const petalX = (Math.sin(petalT * 4 + i) * 0.5) * objScale + sway;
+                        const petalY = (-2.4 + petalT * 3.0) * objScale;
+                        const ps = objScale * 0.04;
+                        ctx.fillRect(petalX - ps / 2, petalY - ps / 2, ps, ps);
+                    }
+
+                    ctx.restore();
+                };
+
+                // Left tree
+                drawCherryTree(p1.x - (p2.x - p1.x) * 0.18, p1.y);
+                // Right tree
+                drawCherryTree(p2.x + (p2.x - p1.x) * 0.18, p1.y);
             }
         }
 
         // Street lamps
         if (segIdx % 20 === 5 && n < 100) {
-            const lampScale = p1.scale * 110;
-            if (lampScale > 2) {
+            const lampScale = p1.scale * 220;
+            if (lampScale > 4) {
                 // Left lamp
                 const lx = p1.x - (p2.x - p1.x) * 0.08;
                 ctx.fillStyle = '#757575';
@@ -1834,8 +1963,8 @@ function drawRacing(dt) {
         const seg = track.segments[segIdx];
         const p = project(worldX, seg.y, z, camX, camHeight, 0);
 
-        const carScale = p.scale * 90;
-        if (carScale < 2) return;
+        const carScale = p.scale * 180;
+        if (carScale < 3) return;
 
         // Draw kart
         ctx.save();
