@@ -625,15 +625,24 @@ function drawTitle() {
     ctx.stroke();
     ctx.setLineDash([]);
 
-    // Animated animals crossing
-    const animalX = ((frameCount * 2) % (W + 200)) - 100;
-    ctx.font = '40px serif';
-    ctx.fillText('🐰', animalX, H - 70);
-    ctx.fillText('🐱', animalX - 80, H - 65);
-    ctx.fillText('🐤', animalX - 160, H - 72);
-    ctx.fillText('🐶', animalX - 240, H - 68);
-    ctx.fillText('🐼', animalX - 320, H - 70);
-    ctx.fillText('🐧', animalX - 400, H - 66);
+    // Animated kawaii animals crossing
+    const animalX = ((frameCount * 2) % (W + 500)) - 100;
+    const defaultD = { eyes: 0, mouth: 0, nose: 0, bodyShape: 0 };
+    characters.forEach((c, i) => {
+        const ax = animalX - i * 90;
+        const bounce = Math.sin(frameCount * 0.12 + i) * 3;
+        drawKawaiiAnimal(ax, H - 60 + bounce, 2.2, c, defaultD);
+    });
+
+    // Floating hearts & sparkles
+    for (let i = 0; i < 8; i++) {
+        const hx = (i * 123 + frameCount * 0.5) % W;
+        const hy = (Math.sin(i * 1.7 + frameCount * 0.02) * 30) + 280 + i * 15;
+        const ha = 0.3 + Math.sin(frameCount * 0.05 + i) * 0.2;
+        ctx.fillStyle = `rgba(255,182,193,${ha})`;
+        ctx.font = '14px serif';
+        ctx.fillText(i % 3 === 0 ? '♥' : i % 3 === 1 ? '✦' : '♡', hx, hy);
+    }
 
     // Title
     const bounce = Math.sin(frameCount * 0.05) * 8;
@@ -688,20 +697,32 @@ function drawTitle() {
 let charSelectHover = -1;
 
 function drawCharSelect() {
-    // Background
+    // Pastel cute background
     const grad = ctx.createLinearGradient(0, 0, 0, H);
     grad.addColorStop(0, '#2d1b69');
+    grad.addColorStop(0.5, '#3d2580');
     grad.addColorStop(1, '#1a0a2e');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, W, H);
 
     drawStars();
 
+    // Floating sparkles
+    for (let i = 0; i < 12; i++) {
+        const sx = (i * 83 + frameCount * 0.3) % W;
+        const sy = (Math.sin(i * 2.3 + frameCount * 0.015) * 20) + 30 + (i * 47) % (H - 60);
+        const sa = 0.2 + Math.sin(frameCount * 0.08 + i * 1.1) * 0.2;
+        ctx.fillStyle = `rgba(255,220,255,${sa})`;
+        ctx.font = '10px serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(i % 2 === 0 ? '✦' : '♡', sx, sy);
+    }
+
     // Title
-    ctx.fillStyle = '#FFD700';
+    ctx.fillStyle = '#FFB6D9';
     ctx.font = 'bold 42px Segoe UI, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('Choose Your Racer!', W / 2, 55);
+    ctx.fillText('Choose Your Cutie!', W / 2, 55);
 
     // Character cards
     const cols = 3;
@@ -735,13 +756,10 @@ function drawCharSelect() {
             roundRect(x, y, cardW, cardH, 16, false);
         }
 
-        // Emoji
-        ctx.font = '52px serif';
-        ctx.textAlign = 'center';
-        const emojiY = y + 55;
-        // Bounce if hovered
-        const emojiBounce = (hovered || selected) ? Math.sin(frameCount * 0.1) * 5 : 0;
-        ctx.fillText(char.emoji, x + cardW / 2, emojiY + emojiBounce);
+        // Kawaii pixel character (replaces emoji)
+        const charBounce = (hovered || selected) ? Math.sin(frameCount * 0.1) * 5 : 0;
+        const defaultDesign = { eyes: 0, mouth: 0, nose: 0, bodyShape: 0 };
+        drawKawaiiAnimal(x + cardW / 2, y + 45 + charBounce, 2.5, char, defaultDesign);
 
         // Name
         ctx.fillStyle = selected ? '#1a0a2e' : '#FFF';
@@ -806,6 +824,287 @@ const bodyColors = ['#FF6B9D', '#4FC3F7', '#81C784', '#FFD54F', '#CE93D8', '#FF8
 const wheelColors = ['#333333', '#555555', '#8D6E63', '#CFD8DC', '#FFD700'];
 const accentColors = ['#FFD700', '#FF4081', '#00E5FF', '#76FF03', '#FFFFFF', '#FF6D00'];
 
+// Pixel art helper - draw a filled pixel block
+function px(x, y, size) {
+    ctx.fillRect(Math.round(x), Math.round(y), size, size);
+}
+
+// Draw a kawaii pixel art animal character
+function drawKawaiiAnimal(x, y, scale, character, design) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(scale, scale);
+    ctx.imageSmoothingEnabled = false;
+
+    const d = design || {};
+    const eyeStyle = d.eyes || 0;
+    const mouthStyle = d.mouth || 0;
+    const cheekStyle = d.nose || 0;  // repurposed as cheek/blush style
+    const bodyShape = d.bodyShape || 0;
+    const p = 2; // pixel size
+
+    const headColors = {
+        'bunny': '#FFD4E0', 'kitten': '#FFE0C0', 'duckling': '#FFF3A0',
+        'puppy': '#D4A574', 'panda': '#F8F8F8', 'penguin': '#2A2A3A'
+    };
+    const headColor = character ? headColors[character.animal] || '#FFD4E0' : '#FFD4E0';
+    const darkColor = character ? character.darkColor || '#333' : '#333';
+    const animal = character ? character.animal : 'bunny';
+
+    // -- EARS (drawn behind head) --
+    ctx.fillStyle = headColor;
+    if (animal === 'bunny') {
+        // Long floppy bunny ears
+        ctx.fillStyle = headColor;
+        for (let ey = -28; ey < -10; ey += p) { px(-9, ey, p); px(-7, ey, p); px(7, ey, p); px(9, ey, p); }
+        // Inner ear pink
+        ctx.fillStyle = '#FFB0C4';
+        for (let ey = -26; ey < -12; ey += p) { px(-8, ey, p); px(8, ey, p); }
+    } else if (animal === 'kitten') {
+        // Pointy cat ears
+        ctx.fillStyle = headColor;
+        px(-11, -14, p); px(-9, -16, p); px(-7, -18, p); px(-9, -14, p); px(-7, -14, p); px(-5, -14, p);
+        px(11, -14, p); px(9, -16, p); px(7, -18, p); px(9, -14, p); px(7, -14, p); px(5, -14, p);
+        // Inner ear pink
+        ctx.fillStyle = '#FFB0C4';
+        px(-9, -15, p); px(-7, -15, p); px(9, -15, p); px(7, -15, p);
+    } else if (animal === 'puppy') {
+        // Floppy puppy ears
+        ctx.fillStyle = darkColor;
+        for (let ey = -10; ey < 4; ey += p) { px(-13, ey, p); px(-11, ey, p); px(13, ey, p); px(11, ey, p); }
+        px(-13, 4, p); px(13, 4, p);
+    } else if (animal === 'panda') {
+        // Round panda ears
+        ctx.fillStyle = '#222';
+        px(-10, -14, p); px(-8, -14, p); px(-10, -12, p); px(-8, -12, p);
+        px(10, -14, p); px(8, -14, p); px(10, -12, p); px(8, -12, p);
+    } else if (animal === 'penguin') {
+        // No visible ears, just the top of head extends
+    } else if (animal === 'duckling') {
+        // Tiny fluff tuft
+        ctx.fillStyle = '#FFD700';
+        px(-2, -16, p); px(0, -18, p); px(2, -16, p);
+    }
+
+    // -- HEAD/BODY (big round chibi head = body) --
+    ctx.fillStyle = headColor;
+    if (bodyShape === 0) {
+        // Round (default kawaii)
+        for (let row = -12; row <= 10; row += p) {
+            const halfW = row < -8 ? 6 : row < -4 ? 10 : row < 4 ? 12 : row < 8 ? 10 : 8;
+            for (let col = -halfW; col <= halfW; col += p) {
+                px(col, row, p);
+            }
+        }
+    } else if (bodyShape === 1) {
+        // Tall/egg
+        for (let row = -14; row <= 10; row += p) {
+            const t = (row + 14) / 24;
+            const halfW = Math.round(Math.sin(t * Math.PI) * 11);
+            for (let col = -halfW; col <= halfW; col += p) {
+                px(col, row, p);
+            }
+        }
+    } else if (bodyShape === 2) {
+        // Chubby square with softer edges
+        for (let row = -10; row <= 10; row += p) {
+            const halfW = (row === -10 || row === 10) ? 9 : 11;
+            for (let col = -halfW; col <= halfW; col += p) {
+                px(col, row, p);
+            }
+        }
+    } else {
+        // Bean/blob
+        for (let row = -12; row <= 12; row += p) {
+            const t = (row + 12) / 24;
+            const halfW = Math.round((Math.sin(t * Math.PI) * 10 + Math.sin(t * Math.PI * 2) * 2));
+            for (let col = -halfW; col <= halfW; col += p) {
+                px(col, row, p);
+            }
+        }
+    }
+
+    // Belly patch for some animals
+    if (animal === 'penguin') {
+        ctx.fillStyle = '#E8E8F0';
+        for (let row = -2; row <= 8; row += p) {
+            const halfW = row < 2 ? 6 : row < 6 ? 8 : 6;
+            for (let col = -halfW; col <= halfW; col += p) { px(col, row, p); }
+        }
+    } else if (animal === 'panda') {
+        ctx.fillStyle = '#FFF';
+        for (let row = -2; row <= 6; row += p) {
+            for (let col = -6; col <= 6; col += p) { px(col, row, p); }
+        }
+    }
+
+    // -- TINY STUB LIMBS --
+    ctx.fillStyle = headColor;
+    if (animal === 'penguin') ctx.fillStyle = '#2A2A3A';
+    // Left arm/paw
+    px(-13, 2, p); px(-13, 4, p);
+    // Right arm/paw
+    px(13, 2, p); px(13, 4, p);
+    // Feet
+    if (animal === 'duckling') {
+        ctx.fillStyle = '#FF9800';
+    } else if (animal === 'penguin') {
+        ctx.fillStyle = '#FF9800';
+    } else {
+        ctx.fillStyle = headColor;
+    }
+    px(-6, 12, p); px(-4, 12, p); px(4, 12, p); px(6, 12, p);
+
+    // Duck bill
+    if (animal === 'duckling') {
+        ctx.fillStyle = '#FF9800';
+        px(-3, 2, p); px(-1, 2, p); px(1, 2, p); px(3, 2, p);
+        px(-2, 4, p); px(0, 4, p); px(2, 4, p);
+    }
+
+    // -- EYES (huge kawaii eyes - THE key feature) --
+    if (eyeStyle === 0) {
+        // Sparkle eyes (default - huge with double highlight)
+        // White base (big!)
+        ctx.fillStyle = '#FFF';
+        for (let ey = -8; ey <= -2; ey += p) {
+            for (let ex = -8; ex <= -2; ex += p) { px(ex, ey, p); }
+            for (let ex = 2; ex <= 8; ex += p) { px(ex, ey, p); }
+        }
+        // Colored iris
+        const irisColor = animal === 'duckling' ? '#222' : animal === 'panda' ? '#333' :
+            animal === 'penguin' ? '#334' : '#443322';
+        ctx.fillStyle = irisColor;
+        for (let ey = -7; ey <= -3; ey += p) {
+            for (let ex = -7; ex <= -3; ex += p) { px(ex, ey, p); }
+            for (let ex = 3; ex <= 7; ex += p) { px(ex, ey, p); }
+        }
+        // Big sparkle highlight (top-left of each eye)
+        ctx.fillStyle = '#FFF';
+        px(-7, -7, p); px(-7, -5, p); px(-5, -7, p);
+        px(3, -7, p); px(3, -5, p); px(5, -7, p);
+        // Small sparkle (bottom-right)
+        px(-3, -3, p);
+        px(7, -3, p);
+    } else if (eyeStyle === 1) {
+        // Happy closed eyes (upside-down arcs like ^_^)
+        ctx.fillStyle = '#222';
+        px(-7, -5, p); px(-5, -7, p); px(-3, -5, p);
+        px(3, -5, p); px(5, -7, p); px(7, -5, p);
+    } else if (eyeStyle === 2) {
+        // Heart eyes
+        ctx.fillStyle = '#FF4081';
+        // Left heart
+        px(-8, -7, p); px(-6, -7, p); px(-4, -7, p); px(-2, -7, p);
+        px(-8, -5, p); px(-6, -5, p); px(-4, -5, p); px(-2, -5, p);
+        px(-7, -3, p); px(-5, -3, p); px(-3, -3, p);
+        px(-6, -1, p); px(-4, -1, p);
+        px(-5, 1, p);
+        // Right heart
+        px(2, -7, p); px(4, -7, p); px(6, -7, p); px(8, -7, p);
+        px(2, -5, p); px(4, -5, p); px(6, -5, p); px(8, -5, p);
+        px(3, -3, p); px(5, -3, p); px(7, -3, p);
+        px(4, -1, p); px(6, -1, p);
+        px(5, 1, p);
+    } else {
+        // Big round dot eyes
+        ctx.fillStyle = '#222';
+        for (let ey = -7; ey <= -3; ey += p) {
+            for (let ex = -7; ex <= -3; ex += p) { px(ex, ey, p); }
+            for (let ex = 3; ex <= 7; ex += p) { px(ex, ey, p); }
+        }
+        // Single highlight
+        ctx.fillStyle = '#FFF';
+        px(-6, -6, p); px(4, -6, p);
+    }
+
+    // Panda eye patches
+    if (animal === 'panda') {
+        ctx.fillStyle = '#333';
+        px(-9, -8, p); px(-9, -6, p); px(-9, -4, p); px(-9, -2, p);
+        px(-1, -8, p); px(-1, -6, p); px(-1, -4, p); px(-1, -2, p);
+        px(1, -8, p); px(1, -6, p); px(1, -4, p); px(1, -2, p);
+        px(9, -8, p); px(9, -6, p); px(9, -4, p); px(9, -2, p);
+    }
+
+    // -- NOSE --
+    if (animal !== 'duckling') {
+        if (animal === 'puppy' || animal === 'kitten') {
+            ctx.fillStyle = animal === 'puppy' ? '#222' : '#FF8899';
+            px(-1, 1, p); px(1, 1, p); px(0, 0, p);
+        } else {
+            ctx.fillStyle = '#FF9999';
+            px(0, 1, p);
+        }
+    }
+
+    // -- MOUTH --
+    ctx.fillStyle = '#555';
+    if (mouthStyle === 0) {
+        // Tiny smile
+        px(-2, 3, p); px(0, 4, p); px(2, 3, p);
+    } else if (mouthStyle === 1) {
+        // Open happy mouth - "o"
+        ctx.fillStyle = '#FF6B6B';
+        px(-1, 3, p); px(1, 3, p); px(-1, 5, p); px(1, 5, p);
+        ctx.fillStyle = '#FF9999';
+        px(0, 4, p);
+    } else if (mouthStyle === 2) {
+        // Cat mouth w
+        ctx.fillStyle = '#555';
+        px(-3, 3, p); px(-1, 5, p); px(0, 3, p); px(1, 5, p); px(3, 3, p);
+    } else {
+        // Blep tongue
+        ctx.fillStyle = '#555';
+        px(-2, 3, p); px(0, 4, p); px(2, 3, p);
+        ctx.fillStyle = '#FF7088';
+        px(0, 5, p); px(0, 7, p);
+    }
+
+    // -- CHEEKS/BLUSH (using the nose slot as cheek style) --
+    if (cheekStyle === 0) {
+        // Round rosy cheeks
+        ctx.fillStyle = 'rgba(255,130,140,0.55)';
+        px(-10, 0, p); px(-10, 2, p); px(-8, 0, p); px(-8, 2, p);
+        px(8, 0, p); px(8, 2, p); px(10, 0, p); px(10, 2, p);
+    } else if (cheekStyle === 1) {
+        // Heart blush
+        ctx.fillStyle = 'rgba(255,100,130,0.5)';
+        px(-10, -1, p); px(-8, -1, p); px(-11, 1, p); px(-9, 1, p); px(-7, 1, p);
+        px(-10, 3, p); px(-8, 3, p); px(-9, 5, p);
+        px(8, -1, p); px(10, -1, p); px(7, 1, p); px(9, 1, p); px(11, 1, p);
+        px(8, 3, p); px(10, 3, p); px(9, 5, p);
+    } else if (cheekStyle === 2) {
+        // Star sparkle cheeks
+        ctx.fillStyle = 'rgba(255,210,100,0.6)';
+        px(-10, 0, p); px(-9, -1, p); px(-9, 1, p); px(-8, 0, p); px(-11, 0, p);
+        px(10, 0, p); px(9, -1, p); px(9, 1, p); px(8, 0, p); px(11, 0, p);
+    } else {
+        // Line blush (like anime // marks)
+        ctx.fillStyle = 'rgba(255,130,140,0.5)';
+        px(-10, -1, p); px(-9, 0, p); px(-8, 1, p);
+        px(-8, -1, p); px(-7, 0, p); px(-6, 1, p);
+        px(6, -1, p); px(7, 0, p); px(8, 1, p);
+        px(8, -1, p); px(9, 0, p); px(10, 1, p);
+    }
+
+    // Penguin beak
+    if (animal === 'penguin') {
+        ctx.fillStyle = '#FF9800';
+        px(-2, 1, p); px(0, 1, p); px(2, 1, p);
+        px(-1, 3, p); px(1, 3, p);
+    }
+
+    // -- TAIL for some animals --
+    if (animal === 'bunny') {
+        ctx.fillStyle = '#FFF';
+        px(0, 11, p); px(-1, 12, p); px(1, 12, p);
+    }
+
+    ctx.imageSmoothingEnabled = true;
+    ctx.restore();
+}
+
 function drawCarPreview(x, y, scale, design, character) {
     ctx.save();
     ctx.translate(x, y);
@@ -835,7 +1134,6 @@ function drawCarPreview(x, y, scale, design, character) {
     // Car body
     ctx.fillStyle = design.bodyColor;
     if (bodyStyle === 0) {
-        // Rounded kart
         ctx.beginPath();
         ctx.moveTo(-40, 10);
         ctx.quadraticCurveTo(-45, -5, -35, -20);
@@ -846,7 +1144,6 @@ function drawCarPreview(x, y, scale, design, character) {
         ctx.quadraticCurveTo(-30, 18, -40, 10);
         ctx.fill();
     } else if (bodyStyle === 1) {
-        // Sporty
         ctx.beginPath();
         ctx.moveTo(-45, 8);
         ctx.lineTo(-38, -18);
@@ -859,7 +1156,6 @@ function drawCarPreview(x, y, scale, design, character) {
         ctx.closePath();
         ctx.fill();
     } else {
-        // Cute wagon
         ctx.beginPath();
         roundRect(-42, -25, 84, 40, 12, true);
     }
@@ -868,233 +1164,18 @@ function drawCarPreview(x, y, scale, design, character) {
     ctx.fillStyle = design.accentColor;
     ctx.fillRect(-30, -5, 60, 6);
 
-    // Windshield
-    ctx.fillStyle = 'rgba(135, 206, 235, 0.6)';
-    ctx.beginPath();
-    ctx.moveTo(-18, -28);
-    ctx.quadraticCurveTo(-15, -38, 0, -40);
-    ctx.quadraticCurveTo(15, -38, 18, -28);
-    ctx.lineTo(12, -20);
-    ctx.lineTo(-12, -20);
-    ctx.closePath();
-    ctx.fill();
-
-    // Draw racer character on car
+    // Draw kawaii pixel character sitting on the car
     if (character) {
-        const d = design || {};
-        const eyeStyle = d.eyes || 0;
-        const mouthStyle = d.mouth || 0;
-        const noseStyle = d.nose || 0;
-        const bodyShapeStyle = d.bodyShape || 0;
-
-        // Body/head shape
-        const headY = -22;
-        const headColors = {
-            'bunny': '#FFE0E8', 'kitten': '#FFE8CC', 'duckling': '#FFF9C4',
-            'puppy': '#D2B48C', 'panda': '#F5F5F5', 'penguin': '#2C2C3E'
-        };
-        const headColor = headColors[character.animal] || '#FFE0E8';
-        ctx.fillStyle = headColor;
-
-        if (bodyShapeStyle === 0) {
-            // Round head
-            ctx.beginPath();
-            ctx.arc(0, headY, 14, 0, Math.PI * 2);
-            ctx.fill();
-        } else if (bodyShapeStyle === 1) {
-            // Tall oval head
-            ctx.beginPath();
-            ctx.ellipse(0, headY - 2, 11, 16, 0, 0, Math.PI * 2);
-            ctx.fill();
-        } else if (bodyShapeStyle === 2) {
-            // Square/chubby head
-            roundRect(-13, headY - 12, 26, 24, 6, true);
-        } else {
-            // Triangle/pointy head
-            ctx.beginPath();
-            ctx.moveTo(0, headY - 16);
-            ctx.lineTo(13, headY + 10);
-            ctx.lineTo(-13, headY + 10);
-            ctx.closePath();
-            ctx.fill();
-        }
-
-        // Ears based on animal
-        ctx.fillStyle = headColor;
-        if (character.animal === 'bunny') {
-            ctx.beginPath();
-            ctx.ellipse(-7, headY - 20, 4, 10, -0.2, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.ellipse(7, headY - 20, 4, 10, 0.2, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.fillStyle = '#FFB6C1';
-            ctx.beginPath();
-            ctx.ellipse(-7, headY - 20, 2, 6, -0.2, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.ellipse(7, headY - 20, 2, 6, 0.2, 0, Math.PI * 2);
-            ctx.fill();
-        } else if (character.animal === 'kitten') {
-            ctx.beginPath();
-            ctx.moveTo(-10, headY - 8);
-            ctx.lineTo(-13, headY - 20);
-            ctx.lineTo(-2, headY - 11);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.moveTo(10, headY - 8);
-            ctx.lineTo(13, headY - 20);
-            ctx.lineTo(2, headY - 11);
-            ctx.fill();
-        } else if (character.animal === 'puppy') {
-            ctx.beginPath();
-            ctx.ellipse(-11, headY - 4, 6, 9, -0.5, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.ellipse(11, headY - 4, 6, 9, 0.5, 0, Math.PI * 2);
-            ctx.fill();
-        } else if (character.animal === 'panda') {
-            ctx.fillStyle = '#333';
-            ctx.beginPath();
-            ctx.arc(-8, headY - 12, 5, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.arc(8, headY - 12, 5, 0, Math.PI * 2);
-            ctx.fill();
-        }
-
-        // Eyes
-        ctx.fillStyle = '#000';
-        if (eyeStyle === 0) {
-            // Big round eyes
-            ctx.fillStyle = '#FFF';
-            ctx.beginPath(); ctx.arc(-5, headY - 2, 5, 0, Math.PI * 2); ctx.fill();
-            ctx.beginPath(); ctx.arc(5, headY - 2, 5, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = '#000';
-            ctx.beginPath(); ctx.arc(-4, headY - 1, 2.5, 0, Math.PI * 2); ctx.fill();
-            ctx.beginPath(); ctx.arc(4, headY - 1, 2.5, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = '#FFF';
-            ctx.beginPath(); ctx.arc(-3, headY - 2.5, 1, 0, Math.PI * 2); ctx.fill();
-            ctx.beginPath(); ctx.arc(3, headY - 2.5, 1, 0, Math.PI * 2); ctx.fill();
-        } else if (eyeStyle === 1) {
-            // Sleepy/happy eyes (closed curves)
-            ctx.strokeStyle = '#000';
-            ctx.lineWidth = 1.5;
-            ctx.beginPath(); ctx.arc(-5, headY - 1, 3, Math.PI, 0); ctx.stroke();
-            ctx.beginPath(); ctx.arc(5, headY - 1, 3, Math.PI, 0); ctx.stroke();
-        } else if (eyeStyle === 2) {
-            // Star eyes
-            ctx.fillStyle = '#FFD700';
-            const drawStar = (sx, sy, r) => {
-                ctx.beginPath();
-                for (let i = 0; i < 5; i++) {
-                    const a = (i * 4 * Math.PI / 5) - Math.PI / 2;
-                    const method = i === 0 ? 'moveTo' : 'lineTo';
-                    ctx[method](sx + Math.cos(a) * r, sy + Math.sin(a) * r);
-                }
-                ctx.closePath();
-                ctx.fill();
-            };
-            drawStar(-5, headY - 1, 4);
-            drawStar(5, headY - 1, 4);
-        } else {
-            // Dot eyes
-            ctx.fillStyle = '#000';
-            ctx.beginPath(); ctx.arc(-5, headY - 1, 2, 0, Math.PI * 2); ctx.fill();
-            ctx.beginPath(); ctx.arc(5, headY - 1, 2, 0, Math.PI * 2); ctx.fill();
-        }
-
-        // Nose
-        if (noseStyle === 0) {
-            // Small triangle nose
-            ctx.fillStyle = character.animal === 'puppy' ? '#222' : '#FF9999';
-            ctx.beginPath();
-            ctx.moveTo(0, headY + 1);
-            ctx.lineTo(-2, headY + 4);
-            ctx.lineTo(2, headY + 4);
-            ctx.fill();
-        } else if (noseStyle === 1) {
-            // Round button nose
-            ctx.fillStyle = '#FF8888';
-            ctx.beginPath();
-            ctx.arc(0, headY + 3, 2.5, 0, Math.PI * 2);
-            ctx.fill();
-        } else if (noseStyle === 2) {
-            // Tiny dot nose
-            ctx.fillStyle = '#333';
-            ctx.beginPath();
-            ctx.arc(0, headY + 2, 1.2, 0, Math.PI * 2);
-            ctx.fill();
-        } else {
-            // Cat/animal nose
-            ctx.fillStyle = '#FF6B81';
-            ctx.beginPath();
-            ctx.moveTo(0, headY + 1);
-            ctx.lineTo(-3, headY + 4);
-            ctx.quadraticCurveTo(0, headY + 6, 3, headY + 4);
-            ctx.fill();
-        }
-
-        // Mouth
-        ctx.strokeStyle = '#333';
-        ctx.lineWidth = 1;
-        if (mouthStyle === 0) {
-            // Happy smile
-            ctx.beginPath();
-            ctx.arc(0, headY + 5, 4, 0.1, Math.PI - 0.1);
-            ctx.stroke();
-        } else if (mouthStyle === 1) {
-            // Open happy mouth
-            ctx.fillStyle = '#FF6B6B';
-            ctx.beginPath();
-            ctx.ellipse(0, headY + 7, 4, 3, 0, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.fillStyle = '#FF9999';
-            ctx.beginPath();
-            ctx.ellipse(0, headY + 8, 2, 1.5, 0, 0, Math.PI * 2);
-            ctx.fill();
-        } else if (mouthStyle === 2) {
-            // Cat mouth (w-shape)
-            ctx.beginPath();
-            ctx.moveTo(-4, headY + 5);
-            ctx.lineTo(-1, headY + 7);
-            ctx.lineTo(0, headY + 5);
-            ctx.lineTo(1, headY + 7);
-            ctx.lineTo(4, headY + 5);
-            ctx.stroke();
-        } else {
-            // Tongue out
-            ctx.beginPath();
-            ctx.arc(0, headY + 5, 3, 0.1, Math.PI - 0.1);
-            ctx.stroke();
-            ctx.fillStyle = '#FF6B81';
-            ctx.beginPath();
-            ctx.ellipse(0, headY + 8, 2, 3, 0, 0, Math.PI * 2);
-            ctx.fill();
-        }
-
-        // Blush cheeks
-        ctx.fillStyle = 'rgba(255,150,150,0.3)';
-        ctx.beginPath(); ctx.arc(-9, headY + 2, 3, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(9, headY + 2, 3, 0, Math.PI * 2); ctx.fill();
+        drawKawaiiAnimal(0, -32, 1.1, character, design);
     }
 
-    // Headlights (taillights from behind-car view)
+    // Taillights
     ctx.fillStyle = '#FF3333';
-    ctx.beginPath();
-    ctx.ellipse(32, 8, 4, 3, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.ellipse(-32, 8, 4, 3, 0, 0, Math.PI * 2);
-    ctx.fill();
-    // Tail light glow
+    ctx.beginPath(); ctx.ellipse(32, 8, 4, 3, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(-32, 8, 4, 3, 0, 0, Math.PI * 2); ctx.fill();
     ctx.fillStyle = 'rgba(255,50,50,0.3)';
-    ctx.beginPath();
-    ctx.ellipse(32, 8, 8, 5, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.ellipse(-32, 8, 8, 5, 0, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.beginPath(); ctx.ellipse(32, 8, 8, 5, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(-32, 8, 8, 5, 0, 0, Math.PI * 2); ctx.fill();
 
     ctx.restore();
 }
@@ -1102,17 +1183,28 @@ function drawCarPreview(x, y, scale, design, character) {
 function drawCarDesign() {
     const grad = ctx.createLinearGradient(0, 0, 0, H);
     grad.addColorStop(0, '#1a0a2e');
+    grad.addColorStop(0.5, '#2d1860');
     grad.addColorStop(1, '#2d1b69');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, W, H);
 
     drawStars();
 
+    // Floating sparkles
+    for (let i = 0; i < 8; i++) {
+        const sx = (i * 120 + frameCount * 0.4) % W;
+        const sy = (Math.sin(i * 1.9 + frameCount * 0.02) * 15) + 20 + (i * 70) % (H - 40);
+        ctx.fillStyle = `rgba(255,220,255,${0.15 + Math.sin(frameCount * 0.06 + i) * 0.15})`;
+        ctx.font = '10px serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(i % 2 === 0 ? '✦' : '♡', sx, sy);
+    }
+
     // Title
-    ctx.fillStyle = '#FFD700';
+    ctx.fillStyle = '#FFB6D9';
     ctx.font = 'bold 32px Segoe UI, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('Design Your Racer!', W / 2, 35);
+    ctx.fillText('✨ Design Your Cutie! ✨', W / 2, 35);
 
     // Car + character preview
     const char = characters[selectedCharacter];
@@ -1281,34 +1373,34 @@ function drawCarDesign() {
 
     // Eyes
     drawOptionRow('Eyes:', 'eyes', [
-        { name: 'Big', icon: '👀' },
-        { name: 'Happy', icon: '😊' },
-        { name: 'Star', icon: '🌟' },
-        { name: 'Dot', icon: '• •' }
+        { name: 'Sparkle', icon: '✨' },
+        { name: 'Happy', icon: '^_^' },
+        { name: 'Heart', icon: '💕' },
+        { name: 'Round', icon: '●●' }
     ], sectionY);
 
     // Mouth
     drawOptionRow('Mouth:', 'mouth', [
-        { name: 'Smile', icon: '😄' },
-        { name: 'Open', icon: '😮' },
-        { name: 'Cat', icon: '😺' },
-        { name: 'Tongue', icon: '😛' }
+        { name: 'Smile', icon: 'ω' },
+        { name: 'Gasp', icon: 'o' },
+        { name: 'Kitty', icon: 'w' },
+        { name: 'Blep', icon: ':p' }
     ], sectionY + 56);
 
-    // Nose
-    drawOptionRow('Nose:', 'nose', [
-        { name: 'Triangle', icon: '🔻' },
-        { name: 'Button', icon: '🔴' },
-        { name: 'Tiny', icon: '·' },
-        { name: 'Animal', icon: '🐽' }
+    // Blush/Cheeks
+    drawOptionRow('Cheeks:', 'nose', [
+        { name: 'Rosy', icon: '●' },
+        { name: 'Hearts', icon: '♥' },
+        { name: 'Stars', icon: '★' },
+        { name: 'Lines', icon: '//' }
     ], sectionY + 112);
 
     // Body/Head Shape
-    drawOptionRow('Head:', 'bodyShape', [
-        { name: 'Round', icon: '⭕' },
-        { name: 'Tall', icon: '🥚' },
-        { name: 'Square', icon: '🟨' },
-        { name: 'Pointy', icon: '🔺' }
+    drawOptionRow('Shape:', 'bodyShape', [
+        { name: 'Round', icon: '○' },
+        { name: 'Egg', icon: '🥚' },
+        { name: 'Chubby', icon: '■' },
+        { name: 'Bean', icon: '~' }
     ], sectionY + 168);
 
     // Back button
@@ -1775,43 +1867,8 @@ function drawRacing(dt) {
             ctx.fillRect((wx - 4) * s, (wy - 4) * s, 8 * s, 8 * s);
         });
 
-        // Draw character face on the car (scaled)
-        ctx.save();
-        ctx.scale(s, s);
-        // Use drawCarPreview's face rendering via a mini inline version
-        const d = r.carDesign || {};
-        const eyeS = d.eyes || 0;
-        const mouthS = d.mouth || 0;
-        const noseS = d.nose || 0;
-        const bodyS = d.bodyShape || 0;
-        const headY = -18;
-        const headColors2 = {
-            'bunny': '#FFE0E8', 'kitten': '#FFE8CC', 'duckling': '#FFF9C4',
-            'puppy': '#D2B48C', 'panda': '#F5F5F5', 'penguin': '#2C2C3E'
-        };
-        ctx.fillStyle = headColors2[r.character.animal] || '#FFE0E8';
-        if (bodyS === 0) { ctx.beginPath(); ctx.arc(0, headY, 10, 0, Math.PI * 2); ctx.fill(); }
-        else if (bodyS === 1) { ctx.beginPath(); ctx.ellipse(0, headY, 8, 12, 0, 0, Math.PI * 2); ctx.fill(); }
-        else if (bodyS === 2) { roundRect(-9, headY - 9, 18, 18, 4, true); }
-        else { ctx.beginPath(); ctx.moveTo(0, headY - 12); ctx.lineTo(9, headY + 7); ctx.lineTo(-9, headY + 7); ctx.fill(); }
-        // Simple eyes
-        ctx.fillStyle = '#000';
-        if (eyeS === 1) {
-            ctx.strokeStyle = '#000'; ctx.lineWidth = 1;
-            ctx.beginPath(); ctx.arc(-3, headY - 1, 2, Math.PI, 0); ctx.stroke();
-            ctx.beginPath(); ctx.arc(3, headY - 1, 2, Math.PI, 0); ctx.stroke();
-        } else {
-            ctx.beginPath(); ctx.arc(-3, headY - 1, 1.5, 0, Math.PI * 2); ctx.fill();
-            ctx.beginPath(); ctx.arc(3, headY - 1, 1.5, 0, Math.PI * 2); ctx.fill();
-        }
-        // Simple mouth
-        ctx.strokeStyle = '#333'; ctx.lineWidth = 0.8;
-        ctx.beginPath(); ctx.arc(0, headY + 3, 3, 0.1, Math.PI - 0.1); ctx.stroke();
-        // Blush
-        ctx.fillStyle = 'rgba(255,150,150,0.3)';
-        ctx.beginPath(); ctx.arc(-6, headY + 1, 2, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(6, headY + 1, 2, 0, Math.PI * 2); ctx.fill();
-        ctx.restore();
+        // Draw kawaii pixel character on the car (0,0 is already at p.x,p.y from translate)
+        drawKawaiiAnimal(0, -18 * s, s * 0.85, r.character, r.carDesign);
 
         // Lure indicator
         if (r.lured) {
