@@ -108,7 +108,7 @@ const track = {
     // Track is defined as a series of segments with curvature
     // Each segment: { length, curve } where curve is turning rate
     segments: [],
-    roadWidth: 3200,
+    roadWidth: 4000,
     segmentLength: 200,
     totalSegments: 0,
     colors: {
@@ -296,7 +296,7 @@ class Racer {
         this.speed = Math.max(0, Math.min(this.speed, this.maxSpeed));
 
         // Apply steering with curve influence
-        const steerForce = this.steerInput * this.handling * 0.04 * dt * 60;
+        const steerForce = this.steerInput * this.handling * 0.055 * dt * 60;
         const curveForce = seg.curve * this.speed * 0.00004 * dt * 60;
         this.x += steerForce - curveForce;
 
@@ -1110,10 +1110,10 @@ function startRace() {
 // PSEUDO-3D RENDERING
 // ============================================================
 function project(x, y, z, camX, camY, camZ) {
-    const scale = 150 / z;
+    const scale = 200 / z;
     return {
         x: W / 2 + (x - camX) * scale,
-        y: H / 2 - (y - camY) * scale + H * 0.35,
+        y: H * 0.4 - (y - camY) * scale + H * 0.25,
         scale: scale
     };
 }
@@ -1147,52 +1147,156 @@ function drawRacing(dt) {
     }
 
     // === RENDER ===
-    // Sky gradient
-    const skyGrad = ctx.createLinearGradient(0, 0, 0, H * 0.65);
-    skyGrad.addColorStop(0, '#87CEEB');
-    skyGrad.addColorStop(0.6, '#E0F7FA');
-    skyGrad.addColorStop(1, '#81C784');
+    // Sky gradient with warm sunset tones
+    const horizonY = H * 0.35;
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, horizonY + 30);
+    skyGrad.addColorStop(0, '#4A90D9');
+    skyGrad.addColorStop(0.4, '#87CEEB');
+    skyGrad.addColorStop(0.7, '#B8E4F0');
+    skyGrad.addColorStop(1, '#E8D5B7');
     ctx.fillStyle = skyGrad;
     ctx.fillRect(0, 0, W, H);
 
-    // Sun
-    ctx.fillStyle = '#FFD54F';
+    // Sun with rays
+    const sunX = 700;
+    const sunY = 45;
+    // Sun glow
+    const sunGlow = ctx.createRadialGradient(sunX, sunY, 10, sunX, sunY, 80);
+    sunGlow.addColorStop(0, 'rgba(255,235,150,0.9)');
+    sunGlow.addColorStop(0.4, 'rgba(255,213,79,0.3)');
+    sunGlow.addColorStop(1, 'rgba(255,213,79,0)');
+    ctx.fillStyle = sunGlow;
+    ctx.fillRect(sunX - 80, sunY - 80, 160, 160);
+    ctx.fillStyle = '#FFE082';
     ctx.beginPath();
-    ctx.arc(700, 60, 40, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = 'rgba(255,213,79,0.2)';
-    ctx.beginPath();
-    ctx.arc(700, 60, 60, 0, Math.PI * 2);
+    ctx.arc(sunX, sunY, 30, 0, Math.PI * 2);
     ctx.fill();
 
-    // Clouds
-    for (let i = 0; i < 5; i++) {
-        const cx = ((i * 200 + frameCount * 0.3) % (W + 100)) - 50;
-        const cy = 40 + i * 25;
-        ctx.fillStyle = 'rgba(255,255,255,0.7)';
-        ctx.beginPath();
-        ctx.ellipse(cx, cy, 40 + i * 5, 18, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.beginPath();
-        ctx.ellipse(cx + 25, cy - 5, 30, 15, 0, 0, Math.PI * 2);
-        ctx.fill();
+    // Clouds (varied sizes and layers)
+    const cloudLayer = [
+        { speed: 0.15, y: 25, count: 3, alpha: 0.5, size: 1.2 },
+        { speed: 0.3, y: 55, count: 4, alpha: 0.7, size: 1.0 },
+        { speed: 0.5, y: 85, count: 3, alpha: 0.6, size: 0.8 }
+    ];
+    cloudLayer.forEach(layer => {
+        for (let i = 0; i < layer.count; i++) {
+            const cx = ((i * 300 + frameCount * layer.speed + layer.y * 10) % (W + 200)) - 100;
+            const cy = layer.y + Math.sin(i * 2.5) * 10;
+            ctx.fillStyle = `rgba(255,255,255,${layer.alpha})`;
+            const s = layer.size;
+            ctx.beginPath();
+            ctx.ellipse(cx, cy, 45 * s, 16 * s, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(cx + 30 * s, cy - 6 * s, 30 * s, 13 * s, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(cx - 20 * s, cy + 3 * s, 25 * s, 11 * s, 0, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    });
+
+    // Distant mountains (back layer - blue/purple)
+    ctx.fillStyle = '#7986CB';
+    ctx.beginPath();
+    ctx.moveTo(0, horizonY + 15);
+    for (let i = 0; i <= W; i += 5) {
+        const mt = Math.sin(i * 0.004) * 45 + Math.sin(i * 0.011 + 1) * 25 + Math.sin(i * 0.003 + 2) * 30;
+        ctx.lineTo(i, horizonY + 15 - Math.max(0, mt));
     }
+    ctx.lineTo(W, horizonY + 30);
+    ctx.lineTo(0, horizonY + 30);
+    ctx.fill();
 
-    // Background hills
-    ctx.fillStyle = '#66BB6A';
+    // Snow caps on tallest peaks
+    ctx.fillStyle = 'rgba(255,255,255,0.6)';
     ctx.beginPath();
-    ctx.moveTo(0, H * 0.5);
-    for (let i = 0; i <= W; i += 20) {
-        ctx.lineTo(i, H * 0.45 + Math.sin(i * 0.008 + frameCount * 0.001) * 20 + Math.sin(i * 0.02) * 10);
+    for (let i = 0; i <= W; i += 5) {
+        const mt = Math.sin(i * 0.004) * 45 + Math.sin(i * 0.011 + 1) * 25 + Math.sin(i * 0.003 + 2) * 30;
+        const peakH = Math.max(0, mt);
+        if (peakH > 55) {
+            ctx.moveTo(i - 8, horizonY + 15 - peakH + 12);
+            ctx.lineTo(i, horizonY + 15 - peakH);
+            ctx.lineTo(i + 8, horizonY + 15 - peakH + 12);
+        }
+    }
+    ctx.fill();
+
+    // Mid mountains (green/forest)
+    ctx.fillStyle = '#4E8B4E';
+    ctx.beginPath();
+    ctx.moveTo(0, horizonY + 20);
+    for (let i = 0; i <= W; i += 5) {
+        const mt = Math.sin(i * 0.007 + 3) * 30 + Math.sin(i * 0.015 + 1) * 15 + Math.sin(i * 0.025) * 8;
+        ctx.lineTo(i, horizonY + 20 - Math.max(0, mt));
+    }
+    ctx.lineTo(W, horizonY + 30);
+    ctx.lineTo(0, horizonY + 30);
+    ctx.fill();
+
+    // Silhouette details on mid mountains: tiny castle tower, windmill, houses
+    const landmarks = [
+        { x: 120, type: 'castle' }, { x: 340, type: 'windmill' },
+        { x: 560, type: 'tower' }, { x: 750, type: 'house' }
+    ];
+    ctx.fillStyle = '#3D7A3D';
+    landmarks.forEach(lm => {
+        const baseY = horizonY + 20 - Math.max(0, Math.sin(lm.x * 0.007 + 3) * 30 + Math.sin(lm.x * 0.015 + 1) * 15);
+        if (lm.type === 'castle') {
+            ctx.fillRect(lm.x - 6, baseY - 18, 12, 18);
+            ctx.fillRect(lm.x - 9, baseY - 22, 4, 6);
+            ctx.fillRect(lm.x + 5, baseY - 22, 4, 6);
+        } else if (lm.type === 'windmill') {
+            ctx.fillRect(lm.x - 3, baseY - 15, 6, 15);
+            ctx.save();
+            ctx.translate(lm.x, baseY - 14);
+            ctx.rotate(frameCount * 0.02);
+            ctx.fillRect(-10, -1, 20, 2);
+            ctx.fillRect(-1, -10, 2, 20);
+            ctx.restore();
+        } else if (lm.type === 'tower') {
+            ctx.fillRect(lm.x - 3, baseY - 20, 6, 20);
+            ctx.beginPath();
+            ctx.moveTo(lm.x - 5, baseY - 20);
+            ctx.lineTo(lm.x, baseY - 28);
+            ctx.lineTo(lm.x + 5, baseY - 20);
+            ctx.fill();
+        } else {
+            ctx.fillRect(lm.x - 8, baseY - 8, 16, 8);
+            ctx.beginPath();
+            ctx.moveTo(lm.x - 10, baseY - 8);
+            ctx.lineTo(lm.x, baseY - 15);
+            ctx.lineTo(lm.x + 10, baseY - 8);
+            ctx.fill();
+        }
+    });
+
+    // Near rolling hills with varied greens
+    ctx.fillStyle = '#5BAD5B';
+    ctx.beginPath();
+    ctx.moveTo(0, horizonY + 25);
+    for (let i = 0; i <= W; i += 10) {
+        ctx.lineTo(i, horizonY + 22 + Math.sin(i * 0.012 + frameCount * 0.001) * 12 + Math.sin(i * 0.03) * 6);
     }
     ctx.lineTo(W, H);
     ctx.lineTo(0, H);
     ctx.fill();
 
+    // Scattered background trees on near hills
+    ctx.fillStyle = '#4A9E4A';
+    for (let i = 0; i < 15; i++) {
+        const tx = (i * 67 + 20) % W;
+        const hillY = horizonY + 22 + Math.sin(tx * 0.012 + frameCount * 0.001) * 12 + Math.sin(tx * 0.03) * 6;
+        const treeH = 6 + (i % 3) * 3;
+        ctx.beginPath();
+        ctx.arc(tx, hillY - treeH, treeH * 0.7, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
     // Render the track using pseudo-3D
     const playerSeg = Math.floor(player.position / track.segmentLength);
-    const camHeight = 1800;
-    const drawDist = 150;
+    const camHeight = 2800;
+    const drawDist = 180;
 
     // Store projected segments for racer rendering
     const segProjections = [];
@@ -1341,7 +1445,7 @@ function drawRacing(dt) {
 
         const worldX = r.x * track.roadWidth * 0.5 + cumulativeCurve * z;
         const seg = track.segments[segIdx];
-        const p = project(worldX, seg.y, z, camX, 1500, 0);
+        const p = project(worldX, seg.y, z, camX, camHeight, 0);
 
         const carScale = p.scale * 22;
         if (carScale < 2) return;
@@ -1421,7 +1525,7 @@ function drawRacing(dt) {
     });
 
     // Draw player car at bottom center (always visible)
-    const playerScreenY = H * 0.88;
+    const playerScreenY = H * 0.85;
     ctx.save();
     ctx.translate(W / 2, playerScreenY);
 
@@ -1510,16 +1614,44 @@ function drawRacing(dt) {
     }
 
     // === HUD ===
-    // Position indicator
+    // Race standings leaderboard
+    const standings = [...racers].sort((a, b) => {
+        const aTotal = a.lap * track.totalSegments * track.segmentLength + a.position;
+        const bTotal = b.lap * track.totalSegments * track.segmentLength + b.position;
+        return bTotal - aTotal;
+    });
+    const lbX = 10, lbY = 10;
+    const lbRowH = 22;
+    const lbH = 8 + standings.length * lbRowH + 4;
     ctx.fillStyle = 'rgba(0,0,0,0.6)';
-    roundRect(10, 10, 100, 55, 10, true);
-    ctx.fillStyle = '#FFD700';
-    ctx.font = 'bold 36px Segoe UI, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(getOrdinal(player.place), 60, 38);
-    ctx.fillStyle = '#FFF';
-    ctx.font = '14px Segoe UI, sans-serif';
-    ctx.fillText(`of ${racers.length}`, 60, 56);
+    roundRect(lbX, lbY, 130, lbH, 10, true);
+
+    standings.forEach((r, i) => {
+        const rowY = lbY + 8 + i * lbRowH;
+        const isMe = r.isPlayer;
+
+        // Highlight player row
+        if (isMe) {
+            ctx.fillStyle = 'rgba(255,215,0,0.2)';
+            roundRect(lbX + 3, rowY - 2, 124, lbRowH - 2, 4, true);
+        }
+
+        // Place number
+        const placeColors = ['#FFD700', '#C0C0C0', '#CD7F32', '#888', '#888', '#888'];
+        ctx.fillStyle = placeColors[i] || '#888';
+        ctx.font = `${isMe ? 'bold ' : ''}13px Segoe UI, sans-serif`;
+        ctx.textAlign = 'left';
+        ctx.fillText(`${i + 1}.`, lbX + 8, rowY + 12);
+
+        // Character emoji
+        ctx.font = '13px serif';
+        ctx.fillText(r.character.emoji, lbX + 26, rowY + 13);
+
+        // Name
+        ctx.fillStyle = isMe ? '#FFD700' : '#FFF';
+        ctx.font = `${isMe ? 'bold ' : ''}12px Segoe UI, sans-serif`;
+        ctx.fillText(isMe ? 'YOU' : r.character.name, lbX + 42, rowY + 12);
+    });
 
     // Lap counter
     ctx.fillStyle = 'rgba(0,0,0,0.6)';
