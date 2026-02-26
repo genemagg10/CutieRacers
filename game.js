@@ -47,7 +47,7 @@ let frameCount = 0;
 let raceTime = 0;
 let countdownTimer = 0;
 let lapCount = 0;
-let totalLaps = 3;
+let totalLaps = 1;
 let raceFinished = false;
 let finalPositions = [];
 let sparkles = [];
@@ -311,22 +311,21 @@ class Racer {
         this.position += this.speed * dt;
         this.totalDistance += this.speed * dt;
 
-        // Lap detection
+        // Finish detection
         const trackLen = track.totalSegments * track.segmentLength;
+        if (this.position >= trackLen && !this.finished) {
+            this.finished = true;
+            this.finishTime = raceTime;
+            this.place = finalPositions.length + 1;
+            finalPositions.push(this);
+            if (this.isPlayer) {
+                gameState = 'results';
+            }
+        }
+        // Wrap position for rendering even after finish detection
         if (this.position >= trackLen) {
             this.position -= trackLen;
             this.lap++;
-            if (this.isPlayer) {
-                floatingTexts.push({ text: `Lap ${this.lap}/${totalLaps}!`, x: W / 2, y: H / 3, timer: 2, color: '#FFD700', size: 48 });
-            }
-            if (this.lap >= totalLaps) {
-                this.finished = true;
-                this.finishTime = raceTime;
-                finalPositions.push(this);
-                if (this.isPlayer) {
-                    gameState = 'results';
-                }
-            }
         }
 
         // Pick up items
@@ -1570,13 +1569,13 @@ function drawRacing(dt) {
         // Update all racers
         racers.forEach(r => r.update(dt));
 
-        // Calculate positions
-        const sorted = [...racers].sort((a, b) => {
-            const aTotal = a.lap * track.totalSegments * track.segmentLength + a.position;
-            const bTotal = b.lap * track.totalSegments * track.segmentLength + b.position;
-            return bTotal - aTotal;
+        // Calculate live positions using total distance traveled
+        const sorted = [...racers].sort((a, b) => b.totalDistance - a.totalDistance);
+        sorted.forEach((r, i) => {
+            // Only update place for racers that haven't finished
+            // (finished racers keep their locked-in place from finish order)
+            if (!r.finished) r.place = i + 1;
         });
-        sorted.forEach((r, i) => r.place = i + 1);
 
         // Check if all racers finished
         if (racers.every(r => r.finished) && !raceFinished) {
@@ -2116,12 +2115,8 @@ function drawRacing(dt) {
     // (brake removed - single button controls)
 
     // === HUD ===
-    // Race standings leaderboard
-    const standings = [...racers].sort((a, b) => {
-        const aTotal = a.lap * track.totalSegments * track.segmentLength + a.position;
-        const bTotal = b.lap * track.totalSegments * track.segmentLength + b.position;
-        return bTotal - aTotal;
-    });
+    // Race standings leaderboard (sorted by total distance traveled)
+    const standings = [...racers].sort((a, b) => b.totalDistance - a.totalDistance);
     const lbX = 10, lbY = 10;
     const lbRowH = 22;
     const lbH = 8 + standings.length * lbRowH + 4;
@@ -2155,13 +2150,15 @@ function drawRacing(dt) {
         ctx.fillText(isMe ? 'YOU' : r.character.name, lbX + 42, rowY + 12);
     });
 
-    // Lap counter
+    // Position indicator (big and clear)
     ctx.fillStyle = 'rgba(0,0,0,0.6)';
-    roundRect(W / 2 - 70, 10, 140, 40, 10, true);
-    ctx.fillStyle = '#FFF';
-    ctx.font = 'bold 20px Segoe UI, sans-serif';
+    roundRect(W / 2 - 55, 10, 110, 40, 10, true);
+    const playerPos = standings.findIndex(r => r.isPlayer) + 1;
+    const posColors = ['#FFD700', '#C0C0C0', '#CD7F32', '#AAA', '#AAA', '#AAA'];
+    ctx.fillStyle = posColors[playerPos - 1] || '#AAA';
+    ctx.font = 'bold 22px Segoe UI, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(`Lap ${Math.min(player.lap + 1, totalLaps)} / ${totalLaps}`, W / 2, 36);
+    ctx.fillText(`${getOrdinal(playerPos)} place`, W / 2, 36);
 
     // Speed (color-coded by speed ratio)
     ctx.fillStyle = 'rgba(0,0,0,0.6)';
@@ -2337,88 +2334,102 @@ function drawTouchControls() {
 }
 
 function drawMiniMap() {
-    // On mobile, move minimap up to avoid touch controls
-    const mapX = isMobile ? W - 120 : W - 130;
-    const mapY = isMobile ? 70 : H - 130;
-    const mapSize = isMobile ? 85 : 110;
+    // Simple oval loop minimap
+    const mapX = isMobile ? W - 130 : W - 145;
+    const mapY = isMobile ? 75 : H - 140;
+    const mapW = isMobile ? 110 : 130;
+    const mapH = isMobile ? 70 : 85;
 
-    ctx.fillStyle = 'rgba(0,0,0,0.5)';
-    ctx.beginPath();
-    ctx.arc(mapX + mapSize / 2, mapY + mapSize / 2, mapSize / 2 + 5, 0, Math.PI * 2);
-    ctx.fill();
+    // Background
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    roundRect(mapX - 10, mapY - 15, mapW + 20, mapH + 30, 12, true);
 
-    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-    ctx.lineWidth = 1;
+    // "TRACK" label
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.font = '9px Segoe UI, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('TRACK', mapX + mapW / 2, mapY - 4);
+
+    // Draw oval track loop
+    const cx = mapX + mapW / 2;
+    const cy = mapY + mapH / 2;
+    const rx = mapW / 2 - 5;  // horizontal radius
+    const ry = mapH / 2 - 3;  // vertical radius
+
+    // Track outline (thick road)
+    ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+    ctx.lineWidth = 8;
     ctx.beginPath();
-    ctx.arc(mapX + mapSize / 2, mapY + mapSize / 2, mapSize / 2 + 5, 0, Math.PI * 2);
+    ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
     ctx.stroke();
 
-    // Draw track path on minimap
-    const cx = mapX + mapSize / 2;
-    const cy = mapY + mapSize / 2;
-    const scale = mapSize / 2 * 0.8;
-
-    // Calculate track path positions
-    let tx = 0, ty = 0, angle = 0;
-    const trackPoints = [];
-
-    for (let i = 0; i < track.totalSegments; i++) {
-        const seg = track.segments[i];
-        angle += seg.curve * 0.02;
-        tx += Math.cos(angle) * 0.3;
-        ty += Math.sin(angle) * 0.3;
-        trackPoints.push({ x: tx, y: ty, idx: i });
-    }
-
-    // Normalize to fit
-    let minTx = Infinity, maxTx = -Infinity, minTy = Infinity, maxTy = -Infinity;
-    trackPoints.forEach(p => {
-        minTx = Math.min(minTx, p.x);
-        maxTx = Math.max(maxTx, p.x);
-        minTy = Math.min(minTy, p.y);
-        maxTy = Math.max(maxTy, p.y);
-    });
-    const rangeX = maxTx - minTx || 1;
-    const rangeY = maxTy - minTy || 1;
-    const mapScale = Math.min(scale / rangeX, scale / rangeY) * 1.6;
-
-    const offsetX = (minTx + maxTx) / 2;
-    const offsetY = (minTy + maxTy) / 2;
-
-    // Draw track line
+    // Track center line
     ctx.strokeStyle = 'rgba(255,255,255,0.5)';
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 2;
     ctx.beginPath();
-    trackPoints.forEach((p, i) => {
-        const px = cx + (p.x - offsetX) * mapScale;
-        const py = cy + (p.y - offsetY) * mapScale;
-        if (i === 0) ctx.moveTo(px, py);
-        else ctx.lineTo(px, py);
-    });
-    ctx.closePath();
+    ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
     ctx.stroke();
 
-    // Draw racers on minimap
-    racers.forEach(r => {
-        const segIdx = mod(Math.floor(r.position / track.segmentLength), track.totalSegments);
-        const tp = trackPoints[segIdx];
-        if (!tp) return;
-        const px = cx + (tp.x - offsetX) * mapScale;
-        const py = cy + (tp.y - offsetY) * mapScale;
+    // Finish line marker (at angle 0 = right side of oval)
+    const finishAngle = -Math.PI / 2; // top of oval
+    const fx = cx + Math.cos(finishAngle) * rx;
+    const fy = cy + Math.sin(finishAngle) * ry;
+    // Checkered flag marker
+    ctx.fillStyle = '#FFF';
+    ctx.fillRect(fx - 4, fy - 6, 4, 4);
+    ctx.fillRect(fx, fy - 2, 4, 4);
+    ctx.fillStyle = '#222';
+    ctx.fillRect(fx, fy - 6, 4, 4);
+    ctx.fillRect(fx - 4, fy - 2, 4, 4);
+    // Flag pole
+    ctx.fillStyle = '#AAA';
+    ctx.fillRect(fx - 5, fy - 6, 1, 12);
 
-        ctx.fillStyle = r.isPlayer ? '#FF0' : r.character.color;
+    // Track length for position mapping
+    const trackLen = track.totalSegments * track.segmentLength;
+
+    // Draw racer dots on the oval
+    // Map position (0 to trackLen) to angle on the oval (starting from top going clockwise)
+    racers.forEach(r => {
+        if (r.isPlayer) return; // draw player last (on top)
+        const progress = r.position / trackLen;
+        const angle = finishAngle + progress * Math.PI * 2;
+        const dotX = cx + Math.cos(angle) * rx;
+        const dotY = cy + Math.sin(angle) * ry;
+
+        ctx.fillStyle = r.character.color;
         ctx.beginPath();
-        ctx.arc(px, py, r.isPlayer ? 5 : 3, 0, Math.PI * 2);
+        ctx.arc(dotX, dotY, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+    });
+
+    // Draw player dot (on top, bigger, pulsing)
+    if (player) {
+        const progress = player.position / trackLen;
+        const angle = finishAngle + progress * Math.PI * 2;
+        const dotX = cx + Math.cos(angle) * rx;
+        const dotY = cy + Math.sin(angle) * ry;
+        const pulse = 1 + Math.sin(frameCount * 0.15) * 0.2;
+
+        // Glow
+        ctx.fillStyle = 'rgba(255,255,0,0.3)';
+        ctx.beginPath();
+        ctx.arc(dotX, dotY, 8 * pulse, 0, Math.PI * 2);
         ctx.fill();
 
-        if (r.isPlayer) {
-            ctx.strokeStyle = '#FFF';
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.arc(px, py, 5, 0, Math.PI * 2);
-            ctx.stroke();
-        }
-    });
+        // Player dot
+        ctx.fillStyle = '#FFD700';
+        ctx.beginPath();
+        ctx.arc(dotX, dotY, 5 * pulse, 0, Math.PI * 2);
+        ctx.fill();
+
+        // White border
+        ctx.strokeStyle = '#FFF';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(dotX, dotY, 5 * pulse, 0, Math.PI * 2);
+        ctx.stroke();
+    }
 }
 
 function getOrdinal(n) {
@@ -2462,8 +2473,13 @@ function drawResults() {
         }
     }
 
-    // Results table
-    const sorted = [...racers].sort((a, b) => a.place - b.place);
+    // Results table - finished racers first (by finish order), then unfinished by distance
+    const sorted = [...racers].sort((a, b) => {
+        if (a.finished && b.finished) return a.finishTime - b.finishTime;
+        if (a.finished && !b.finished) return -1;
+        if (!a.finished && b.finished) return 1;
+        return b.totalDistance - a.totalDistance;
+    });
     const tableY = 110;
     const rowH = 60;
 
