@@ -40,7 +40,7 @@ let gameState = 'title'; // title, charSelect, carDesign, countdown, racing, res
 // Safe modulo that always returns a positive result
 function mod(n, m) { return ((n % m) + m) % m; }
 let selectedCharacter = null;
-let carDesign = { bodyColor: '#FF6B9D', wheelColor: '#333', accentColor: '#FFD700', bodyStyle: 0 };
+let carDesign = { bodyColor: '#FF6B9D', wheelColor: '#333', accentColor: '#FFD700', bodyStyle: 0, eyes: 0, mouth: 0, nose: 0, bodyShape: 0 };
 let keys = {};
 let mouseX = 0, mouseY = 0, mouseDown = false, mouseClicked = false;
 let frameCount = 0;
@@ -202,7 +202,11 @@ class Racer {
             bodyColor: character.color,
             wheelColor: '#333',
             accentColor: character.darkColor,
-            bodyStyle: Math.floor(Math.random() * 3)
+            bodyStyle: Math.floor(Math.random() * 3),
+            eyes: Math.floor(Math.random() * 4),
+            mouth: Math.floor(Math.random() * 4),
+            nose: Math.floor(Math.random() * 4),
+            bodyShape: Math.floor(Math.random() * 4)
         };
         // AI properties
         this.aiSteer = 0;
@@ -875,21 +879,221 @@ function drawCarPreview(x, y, scale, design, character) {
     ctx.closePath();
     ctx.fill();
 
-    // Character emoji on car
+    // Draw racer character on car
     if (character) {
-        ctx.font = '24px serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(character.emoji, 0, -12);
+        const d = design || {};
+        const eyeStyle = d.eyes || 0;
+        const mouthStyle = d.mouth || 0;
+        const noseStyle = d.nose || 0;
+        const bodyShapeStyle = d.bodyShape || 0;
+
+        // Body/head shape
+        const headY = -22;
+        const headColors = {
+            'bunny': '#FFE0E8', 'kitten': '#FFE8CC', 'duckling': '#FFF9C4',
+            'puppy': '#D2B48C', 'panda': '#F5F5F5', 'penguin': '#2C2C3E'
+        };
+        const headColor = headColors[character.animal] || '#FFE0E8';
+        ctx.fillStyle = headColor;
+
+        if (bodyShapeStyle === 0) {
+            // Round head
+            ctx.beginPath();
+            ctx.arc(0, headY, 14, 0, Math.PI * 2);
+            ctx.fill();
+        } else if (bodyShapeStyle === 1) {
+            // Tall oval head
+            ctx.beginPath();
+            ctx.ellipse(0, headY - 2, 11, 16, 0, 0, Math.PI * 2);
+            ctx.fill();
+        } else if (bodyShapeStyle === 2) {
+            // Square/chubby head
+            roundRect(-13, headY - 12, 26, 24, 6, true);
+        } else {
+            // Triangle/pointy head
+            ctx.beginPath();
+            ctx.moveTo(0, headY - 16);
+            ctx.lineTo(13, headY + 10);
+            ctx.lineTo(-13, headY + 10);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        // Ears based on animal
+        ctx.fillStyle = headColor;
+        if (character.animal === 'bunny') {
+            ctx.beginPath();
+            ctx.ellipse(-7, headY - 20, 4, 10, -0.2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(7, headY - 20, 4, 10, 0.2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#FFB6C1';
+            ctx.beginPath();
+            ctx.ellipse(-7, headY - 20, 2, 6, -0.2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(7, headY - 20, 2, 6, 0.2, 0, Math.PI * 2);
+            ctx.fill();
+        } else if (character.animal === 'kitten') {
+            ctx.beginPath();
+            ctx.moveTo(-10, headY - 8);
+            ctx.lineTo(-13, headY - 20);
+            ctx.lineTo(-2, headY - 11);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(10, headY - 8);
+            ctx.lineTo(13, headY - 20);
+            ctx.lineTo(2, headY - 11);
+            ctx.fill();
+        } else if (character.animal === 'puppy') {
+            ctx.beginPath();
+            ctx.ellipse(-11, headY - 4, 6, 9, -0.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(11, headY - 4, 6, 9, 0.5, 0, Math.PI * 2);
+            ctx.fill();
+        } else if (character.animal === 'panda') {
+            ctx.fillStyle = '#333';
+            ctx.beginPath();
+            ctx.arc(-8, headY - 12, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(8, headY - 12, 5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Eyes
+        ctx.fillStyle = '#000';
+        if (eyeStyle === 0) {
+            // Big round eyes
+            ctx.fillStyle = '#FFF';
+            ctx.beginPath(); ctx.arc(-5, headY - 2, 5, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(5, headY - 2, 5, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#000';
+            ctx.beginPath(); ctx.arc(-4, headY - 1, 2.5, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(4, headY - 1, 2.5, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#FFF';
+            ctx.beginPath(); ctx.arc(-3, headY - 2.5, 1, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(3, headY - 2.5, 1, 0, Math.PI * 2); ctx.fill();
+        } else if (eyeStyle === 1) {
+            // Sleepy/happy eyes (closed curves)
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath(); ctx.arc(-5, headY - 1, 3, Math.PI, 0); ctx.stroke();
+            ctx.beginPath(); ctx.arc(5, headY - 1, 3, Math.PI, 0); ctx.stroke();
+        } else if (eyeStyle === 2) {
+            // Star eyes
+            ctx.fillStyle = '#FFD700';
+            const drawStar = (sx, sy, r) => {
+                ctx.beginPath();
+                for (let i = 0; i < 5; i++) {
+                    const a = (i * 4 * Math.PI / 5) - Math.PI / 2;
+                    const method = i === 0 ? 'moveTo' : 'lineTo';
+                    ctx[method](sx + Math.cos(a) * r, sy + Math.sin(a) * r);
+                }
+                ctx.closePath();
+                ctx.fill();
+            };
+            drawStar(-5, headY - 1, 4);
+            drawStar(5, headY - 1, 4);
+        } else {
+            // Dot eyes
+            ctx.fillStyle = '#000';
+            ctx.beginPath(); ctx.arc(-5, headY - 1, 2, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(5, headY - 1, 2, 0, Math.PI * 2); ctx.fill();
+        }
+
+        // Nose
+        if (noseStyle === 0) {
+            // Small triangle nose
+            ctx.fillStyle = character.animal === 'puppy' ? '#222' : '#FF9999';
+            ctx.beginPath();
+            ctx.moveTo(0, headY + 1);
+            ctx.lineTo(-2, headY + 4);
+            ctx.lineTo(2, headY + 4);
+            ctx.fill();
+        } else if (noseStyle === 1) {
+            // Round button nose
+            ctx.fillStyle = '#FF8888';
+            ctx.beginPath();
+            ctx.arc(0, headY + 3, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+        } else if (noseStyle === 2) {
+            // Tiny dot nose
+            ctx.fillStyle = '#333';
+            ctx.beginPath();
+            ctx.arc(0, headY + 2, 1.2, 0, Math.PI * 2);
+            ctx.fill();
+        } else {
+            // Cat/animal nose
+            ctx.fillStyle = '#FF6B81';
+            ctx.beginPath();
+            ctx.moveTo(0, headY + 1);
+            ctx.lineTo(-3, headY + 4);
+            ctx.quadraticCurveTo(0, headY + 6, 3, headY + 4);
+            ctx.fill();
+        }
+
+        // Mouth
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 1;
+        if (mouthStyle === 0) {
+            // Happy smile
+            ctx.beginPath();
+            ctx.arc(0, headY + 5, 4, 0.1, Math.PI - 0.1);
+            ctx.stroke();
+        } else if (mouthStyle === 1) {
+            // Open happy mouth
+            ctx.fillStyle = '#FF6B6B';
+            ctx.beginPath();
+            ctx.ellipse(0, headY + 7, 4, 3, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#FF9999';
+            ctx.beginPath();
+            ctx.ellipse(0, headY + 8, 2, 1.5, 0, 0, Math.PI * 2);
+            ctx.fill();
+        } else if (mouthStyle === 2) {
+            // Cat mouth (w-shape)
+            ctx.beginPath();
+            ctx.moveTo(-4, headY + 5);
+            ctx.lineTo(-1, headY + 7);
+            ctx.lineTo(0, headY + 5);
+            ctx.lineTo(1, headY + 7);
+            ctx.lineTo(4, headY + 5);
+            ctx.stroke();
+        } else {
+            // Tongue out
+            ctx.beginPath();
+            ctx.arc(0, headY + 5, 3, 0.1, Math.PI - 0.1);
+            ctx.stroke();
+            ctx.fillStyle = '#FF6B81';
+            ctx.beginPath();
+            ctx.ellipse(0, headY + 8, 2, 3, 0, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Blush cheeks
+        ctx.fillStyle = 'rgba(255,150,150,0.3)';
+        ctx.beginPath(); ctx.arc(-9, headY + 2, 3, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(9, headY + 2, 3, 0, Math.PI * 2); ctx.fill();
     }
 
-    // Headlights
-    ctx.fillStyle = '#FFD700';
+    // Headlights (taillights from behind-car view)
+    ctx.fillStyle = '#FF3333';
     ctx.beginPath();
-    ctx.ellipse(35, -12, 5, 4, 0, 0, Math.PI * 2);
+    ctx.ellipse(32, 8, 4, 3, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.beginPath();
-    ctx.ellipse(-35, -12, 5, 4, 0, 0, Math.PI * 2);
+    ctx.ellipse(-32, 8, 4, 3, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Tail light glow
+    ctx.fillStyle = 'rgba(255,50,50,0.3)';
+    ctx.beginPath();
+    ctx.ellipse(32, 8, 8, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(-32, 8, 8, 5, 0, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.restore();
@@ -906,172 +1110,214 @@ function drawCarDesign() {
 
     // Title
     ctx.fillStyle = '#FFD700';
-    ctx.font = 'bold 38px Segoe UI, sans-serif';
+    ctx.font = 'bold 32px Segoe UI, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('Design Your Car!', W / 2, 45);
+    ctx.fillText('Design Your Racer!', W / 2, 35);
 
-    // Car preview
+    // Car + character preview
     const char = characters[selectedCharacter];
     const previewX = W / 2;
-    const previewY = 160;
+    const previewY = 130;
     const wobble = Math.sin(frameCount * 0.03) * 2;
 
-    // Preview background circle
     ctx.fillStyle = 'rgba(255,255,255,0.05)';
     ctx.beginPath();
-    ctx.arc(previewX, previewY, 100, 0, Math.PI * 2);
+    ctx.arc(previewX, previewY, 90, 0, Math.PI * 2);
     ctx.fill();
 
-    drawCarPreview(previewX, previewY + wobble, 2, carDesign, char);
+    drawCarPreview(previewX, previewY + wobble, 2.2, carDesign, char);
 
-    // Color pickers
-    const sectionY = 290;
+    // Character name
+    ctx.fillStyle = '#FFF';
+    ctx.font = 'bold 16px Segoe UI, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(`${char.emoji} ${char.name} - ${char.desc}`, W / 2, previewY + 65);
+
+    // --- LEFT COLUMN: Car options ---
+    const colL = 30;
+    const sectionY = 210;
 
     // Body Color
     ctx.fillStyle = '#FFF';
-    ctx.font = 'bold 16px Segoe UI, sans-serif';
+    ctx.font = 'bold 13px Segoe UI, sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText('Body Color:', 60, sectionY);
+    ctx.fillText('Body Color:', colL, sectionY);
     bodyColors.forEach((color, i) => {
-        const cx = 60 + i * 42;
-        const cy = sectionY + 20;
+        const cx = colL + i * 36;
+        const cy = sectionY + 8;
         const selected = carDesign.bodyColor === color;
-
         if (selected) {
             ctx.strokeStyle = '#FFD700';
-            ctx.lineWidth = 3;
+            ctx.lineWidth = 2;
             ctx.beginPath();
-            ctx.arc(cx + 14, cy + 14, 18, 0, Math.PI * 2);
+            ctx.arc(cx + 12, cy + 12, 15, 0, Math.PI * 2);
             ctx.stroke();
         }
-
         ctx.fillStyle = color;
         ctx.beginPath();
-        ctx.arc(cx + 14, cy + 14, 14, 0, Math.PI * 2);
+        ctx.arc(cx + 12, cy + 12, 11, 0, Math.PI * 2);
         ctx.fill();
-
-        if (mouseClicked && Math.hypot(mouseX - (cx + 14), mouseY - (cy + 14)) < 16) {
+        if (mouseClicked && Math.hypot(mouseX - (cx + 12), mouseY - (cy + 12)) < 13) {
             carDesign.bodyColor = color;
         }
     });
 
     // Wheel Color
     ctx.fillStyle = '#FFF';
-    ctx.fillText('Wheel Color:', 60, sectionY + 65);
+    ctx.fillText('Wheels:', colL, sectionY + 48);
     wheelColors.forEach((color, i) => {
-        const cx = 60 + i * 42;
-        const cy = sectionY + 85;
+        const cx = colL + i * 36;
+        const cy = sectionY + 56;
         const selected = carDesign.wheelColor === color;
-
         if (selected) {
             ctx.strokeStyle = '#FFD700';
-            ctx.lineWidth = 3;
+            ctx.lineWidth = 2;
             ctx.beginPath();
-            ctx.arc(cx + 14, cy + 14, 18, 0, Math.PI * 2);
+            ctx.arc(cx + 12, cy + 12, 15, 0, Math.PI * 2);
             ctx.stroke();
         }
-
         ctx.fillStyle = color;
         ctx.beginPath();
-        ctx.arc(cx + 14, cy + 14, 14, 0, Math.PI * 2);
+        ctx.arc(cx + 12, cy + 12, 11, 0, Math.PI * 2);
         ctx.fill();
-
-        // White outline for dark colors
         ctx.strokeStyle = 'rgba(255,255,255,0.3)';
         ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.arc(cx + 14, cy + 14, 14, 0, Math.PI * 2);
+        ctx.arc(cx + 12, cy + 12, 11, 0, Math.PI * 2);
         ctx.stroke();
-
-        if (mouseClicked && Math.hypot(mouseX - (cx + 14), mouseY - (cy + 14)) < 16) {
+        if (mouseClicked && Math.hypot(mouseX - (cx + 12), mouseY - (cy + 12)) < 13) {
             carDesign.wheelColor = color;
         }
     });
 
     // Accent Color
     ctx.fillStyle = '#FFF';
-    ctx.fillText('Accent Color:', 60, sectionY + 130);
+    ctx.fillText('Accent:', colL, sectionY + 96);
     accentColors.forEach((color, i) => {
-        const cx = 60 + i * 42;
-        const cy = sectionY + 150;
+        const cx = colL + i * 36;
+        const cy = sectionY + 104;
         const selected = carDesign.accentColor === color;
-
         if (selected) {
             ctx.strokeStyle = '#FFD700';
-            ctx.lineWidth = 3;
+            ctx.lineWidth = 2;
             ctx.beginPath();
-            ctx.arc(cx + 14, cy + 14, 18, 0, Math.PI * 2);
+            ctx.arc(cx + 12, cy + 12, 15, 0, Math.PI * 2);
             ctx.stroke();
         }
-
         ctx.fillStyle = color;
         ctx.beginPath();
-        ctx.arc(cx + 14, cy + 14, 14, 0, Math.PI * 2);
+        ctx.arc(cx + 12, cy + 12, 11, 0, Math.PI * 2);
         ctx.fill();
-
         ctx.strokeStyle = 'rgba(255,255,255,0.3)';
         ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.arc(cx + 14, cy + 14, 14, 0, Math.PI * 2);
+        ctx.arc(cx + 12, cy + 12, 11, 0, Math.PI * 2);
         ctx.stroke();
-
-        if (mouseClicked && Math.hypot(mouseX - (cx + 14), mouseY - (cy + 14)) < 16) {
+        if (mouseClicked && Math.hypot(mouseX - (cx + 12), mouseY - (cy + 12)) < 13) {
             carDesign.accentColor = color;
         }
     });
 
     // Body Style
     ctx.fillStyle = '#FFF';
-    ctx.font = 'bold 16px Segoe UI, sans-serif';
-    ctx.fillText('Body Style:', 500, sectionY);
+    ctx.fillText('Car Style:', colL, sectionY + 148);
     const styleNames = ['Rounded', 'Sporty', 'Wagon'];
     styleNames.forEach((name, i) => {
-        const bx = 500;
-        const by = sectionY + 15 + i * 52;
+        const bx = colL + i * 100;
+        const by = sectionY + 156;
         const selected = carDesign.bodyStyle === i;
-        const hovered = mouseX >= bx && mouseX <= bx + 160 && mouseY >= by && mouseY <= by + 44;
-
+        const hovered = mouseX >= bx && mouseX <= bx + 92 && mouseY >= by && mouseY <= by + 38;
         ctx.fillStyle = selected ? '#FF69B4' : (hovered ? '#3a2a6a' : '#2a1a5a');
-        roundRect(bx, by, 160, 44, 10, true);
-
+        roundRect(bx, by, 92, 38, 8, true);
         if (selected) {
             ctx.strokeStyle = '#FFD700';
             ctx.lineWidth = 2;
-            roundRect(bx, by, 160, 44, 10, false);
+            roundRect(bx, by, 92, 38, 8, false);
         }
-
-        // Mini car preview
         const tempDesign = { ...carDesign, bodyStyle: i };
-        drawCarPreview(bx + 40, by + 22, 0.6, tempDesign, null);
-
+        drawCarPreview(bx + 24, by + 19, 0.45, tempDesign, null);
         ctx.fillStyle = '#FFF';
-        ctx.font = '14px Segoe UI, sans-serif';
+        ctx.font = '12px Segoe UI, sans-serif';
         ctx.textAlign = 'left';
-        ctx.fillText(name, bx + 80, by + 26);
-
-        if (hovered && mouseClicked) {
-            carDesign.bodyStyle = i;
-        }
+        ctx.fillText(name, bx + 50, by + 23);
+        if (hovered && mouseClicked) carDesign.bodyStyle = i;
     });
 
-    // Character info
-    ctx.fillStyle = '#FFF';
-    ctx.font = 'bold 18px Segoe UI, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(`${char.emoji} ${char.name}`, 730, sectionY + 10);
-    ctx.font = '14px Segoe UI, sans-serif';
-    ctx.fillStyle = '#BBB';
-    ctx.fillText(char.desc, 730, sectionY + 35);
-    ctx.fillStyle = '#FF69B4';
-    ctx.fillText(`Weak to: ${char.weaknessName}`, 730, sectionY + 58);
+    // --- RIGHT COLUMN: Character appearance ---
+    const colR = 480;
+
+    // Helper to draw option row with preview mini-faces
+    const drawOptionRow = (label, propName, options, startY) => {
+        ctx.fillStyle = '#FFF';
+        ctx.font = 'bold 13px Segoe UI, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(label, colR, startY);
+
+        options.forEach((opt, i) => {
+            const bx = colR + i * 100;
+            const by = startY + 8;
+            const bw = 92;
+            const bh = 38;
+            const selected = carDesign[propName] === i;
+            const hovered = mouseX >= bx && mouseX <= bx + bw && mouseY >= by && mouseY <= by + bh;
+
+            ctx.fillStyle = selected ? '#FF69B4' : (hovered ? '#3a2a6a' : '#2a1a5a');
+            roundRect(bx, by, bw, bh, 8, true);
+            if (selected) {
+                ctx.strokeStyle = '#FFD700';
+                ctx.lineWidth = 2;
+                roundRect(bx, by, bw, bh, 8, false);
+            }
+
+            ctx.fillStyle = '#FFF';
+            ctx.font = '11px Segoe UI, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(opt.icon, bx + 20, by + 24);
+            ctx.fillText(opt.name, bx + 58, by + 23);
+
+            if (hovered && mouseClicked) carDesign[propName] = i;
+        });
+    };
+
+    // Eyes
+    drawOptionRow('Eyes:', 'eyes', [
+        { name: 'Big', icon: '👀' },
+        { name: 'Happy', icon: '😊' },
+        { name: 'Star', icon: '🌟' },
+        { name: 'Dot', icon: '• •' }
+    ], sectionY);
+
+    // Mouth
+    drawOptionRow('Mouth:', 'mouth', [
+        { name: 'Smile', icon: '😄' },
+        { name: 'Open', icon: '😮' },
+        { name: 'Cat', icon: '😺' },
+        { name: 'Tongue', icon: '😛' }
+    ], sectionY + 56);
+
+    // Nose
+    drawOptionRow('Nose:', 'nose', [
+        { name: 'Triangle', icon: '🔻' },
+        { name: 'Button', icon: '🔴' },
+        { name: 'Tiny', icon: '·' },
+        { name: 'Animal', icon: '🐽' }
+    ], sectionY + 112);
+
+    // Body/Head Shape
+    drawOptionRow('Head:', 'bodyShape', [
+        { name: 'Round', icon: '⭕' },
+        { name: 'Tall', icon: '🥚' },
+        { name: 'Square', icon: '🟨' },
+        { name: 'Pointy', icon: '🔺' }
+    ], sectionY + 168);
 
     // Back button
-    if (drawButton(50, H - 60, 150, 48, '← Back', '#9C27B0', '#7B1FA2')) {
+    if (drawButton(50, H - 55, 150, 44, '← Back', '#9C27B0', '#7B1FA2')) {
         gameState = 'charSelect';
     }
 
     // Race button
-    if (drawButton(W / 2 - 120, H - 60, 240, 48, '🏁  START RACE!', '#4CAF50', '#388E3C')) {
+    if (drawButton(W / 2 - 120, H - 55, 240, 44, '🏁  START RACE!', '#4CAF50', '#388E3C')) {
         startRace();
     }
 }
@@ -1110,10 +1356,10 @@ function startRace() {
 // PSEUDO-3D RENDERING
 // ============================================================
 function project(x, y, z, camX, camY, camZ) {
-    const scale = 200 / z;
+    const scale = 300 / z;
     return {
         x: W / 2 + (x - camX) * scale,
-        y: H * 0.4 - (y - camY) * scale + H * 0.25,
+        y: H * 0.38 - (y - camY) * scale,
         scale: scale
     };
 }
@@ -1147,156 +1393,148 @@ function drawRacing(dt) {
     }
 
     // === RENDER ===
-    // Sky gradient with warm sunset tones
-    const horizonY = H * 0.35;
-    const skyGrad = ctx.createLinearGradient(0, 0, 0, horizonY + 30);
-    skyGrad.addColorStop(0, '#4A90D9');
-    skyGrad.addColorStop(0.4, '#87CEEB');
-    skyGrad.addColorStop(0.7, '#B8E4F0');
-    skyGrad.addColorStop(1, '#E8D5B7');
+    const horizonY = H * 0.38;
+
+    // Sky gradient - vibrant retro sunset/tropical
+    const skyGrad = ctx.createLinearGradient(0, 0, 0, horizonY);
+    skyGrad.addColorStop(0, '#1a1a4e');
+    skyGrad.addColorStop(0.2, '#3d5a9e');
+    skyGrad.addColorStop(0.5, '#6dacdf');
+    skyGrad.addColorStop(0.75, '#a8dce6');
+    skyGrad.addColorStop(1, '#f0d8b8');
     ctx.fillStyle = skyGrad;
     ctx.fillRect(0, 0, W, H);
 
-    // Sun with rays
-    const sunX = 700;
-    const sunY = 45;
-    // Sun glow
-    const sunGlow = ctx.createRadialGradient(sunX, sunY, 10, sunX, sunY, 80);
-    sunGlow.addColorStop(0, 'rgba(255,235,150,0.9)');
-    sunGlow.addColorStop(0.4, 'rgba(255,213,79,0.3)');
-    sunGlow.addColorStop(1, 'rgba(255,213,79,0)');
+    // Large sun near horizon
+    const sunX = W / 2;
+    const sunY = horizonY - 30;
+    const sunGlow = ctx.createRadialGradient(sunX, sunY, 15, sunX, sunY, 100);
+    sunGlow.addColorStop(0, 'rgba(255,240,180,1)');
+    sunGlow.addColorStop(0.3, 'rgba(255,200,100,0.6)');
+    sunGlow.addColorStop(0.6, 'rgba(255,150,80,0.2)');
+    sunGlow.addColorStop(1, 'rgba(255,100,50,0)');
     ctx.fillStyle = sunGlow;
-    ctx.fillRect(sunX - 80, sunY - 80, 160, 160);
-    ctx.fillStyle = '#FFE082';
     ctx.beginPath();
-    ctx.arc(sunX, sunY, 30, 0, Math.PI * 2);
+    ctx.arc(sunX, sunY, 100, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#FFF4CC';
+    ctx.beginPath();
+    ctx.arc(sunX, sunY, 28, 0, Math.PI * 2);
     ctx.fill();
 
-    // Clouds (varied sizes and layers)
-    const cloudLayer = [
-        { speed: 0.15, y: 25, count: 3, alpha: 0.5, size: 1.2 },
-        { speed: 0.3, y: 55, count: 4, alpha: 0.7, size: 1.0 },
-        { speed: 0.5, y: 85, count: 3, alpha: 0.6, size: 0.8 }
-    ];
-    cloudLayer.forEach(layer => {
-        for (let i = 0; i < layer.count; i++) {
-            const cx = ((i * 300 + frameCount * layer.speed + layer.y * 10) % (W + 200)) - 100;
-            const cy = layer.y + Math.sin(i * 2.5) * 10;
-            ctx.fillStyle = `rgba(255,255,255,${layer.alpha})`;
-            const s = layer.size;
-            ctx.beginPath();
-            ctx.ellipse(cx, cy, 45 * s, 16 * s, 0, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.ellipse(cx + 30 * s, cy - 6 * s, 30 * s, 13 * s, 0, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.ellipse(cx - 20 * s, cy + 3 * s, 25 * s, 11 * s, 0, 0, Math.PI * 2);
-            ctx.fill();
-        }
-    });
-
-    // Distant mountains (back layer - blue/purple)
-    ctx.fillStyle = '#7986CB';
-    ctx.beginPath();
-    ctx.moveTo(0, horizonY + 15);
-    for (let i = 0; i <= W; i += 5) {
-        const mt = Math.sin(i * 0.004) * 45 + Math.sin(i * 0.011 + 1) * 25 + Math.sin(i * 0.003 + 2) * 30;
-        ctx.lineTo(i, horizonY + 15 - Math.max(0, mt));
-    }
-    ctx.lineTo(W, horizonY + 30);
-    ctx.lineTo(0, horizonY + 30);
-    ctx.fill();
-
-    // Snow caps on tallest peaks
-    ctx.fillStyle = 'rgba(255,255,255,0.6)';
-    ctx.beginPath();
-    for (let i = 0; i <= W; i += 5) {
-        const mt = Math.sin(i * 0.004) * 45 + Math.sin(i * 0.011 + 1) * 25 + Math.sin(i * 0.003 + 2) * 30;
-        const peakH = Math.max(0, mt);
-        if (peakH > 55) {
-            ctx.moveTo(i - 8, horizonY + 15 - peakH + 12);
-            ctx.lineTo(i, horizonY + 15 - peakH);
-            ctx.lineTo(i + 8, horizonY + 15 - peakH + 12);
-        }
-    }
-    ctx.fill();
-
-    // Mid mountains (green/forest)
-    ctx.fillStyle = '#4E8B4E';
-    ctx.beginPath();
-    ctx.moveTo(0, horizonY + 20);
-    for (let i = 0; i <= W; i += 5) {
-        const mt = Math.sin(i * 0.007 + 3) * 30 + Math.sin(i * 0.015 + 1) * 15 + Math.sin(i * 0.025) * 8;
-        ctx.lineTo(i, horizonY + 20 - Math.max(0, mt));
-    }
-    ctx.lineTo(W, horizonY + 30);
-    ctx.lineTo(0, horizonY + 30);
-    ctx.fill();
-
-    // Silhouette details on mid mountains: tiny castle tower, windmill, houses
-    const landmarks = [
-        { x: 120, type: 'castle' }, { x: 340, type: 'windmill' },
-        { x: 560, type: 'tower' }, { x: 750, type: 'house' }
-    ];
-    ctx.fillStyle = '#3D7A3D';
-    landmarks.forEach(lm => {
-        const baseY = horizonY + 20 - Math.max(0, Math.sin(lm.x * 0.007 + 3) * 30 + Math.sin(lm.x * 0.015 + 1) * 15);
-        if (lm.type === 'castle') {
-            ctx.fillRect(lm.x - 6, baseY - 18, 12, 18);
-            ctx.fillRect(lm.x - 9, baseY - 22, 4, 6);
-            ctx.fillRect(lm.x + 5, baseY - 22, 4, 6);
-        } else if (lm.type === 'windmill') {
-            ctx.fillRect(lm.x - 3, baseY - 15, 6, 15);
-            ctx.save();
-            ctx.translate(lm.x, baseY - 14);
-            ctx.rotate(frameCount * 0.02);
-            ctx.fillRect(-10, -1, 20, 2);
-            ctx.fillRect(-1, -10, 2, 20);
-            ctx.restore();
-        } else if (lm.type === 'tower') {
-            ctx.fillRect(lm.x - 3, baseY - 20, 6, 20);
-            ctx.beginPath();
-            ctx.moveTo(lm.x - 5, baseY - 20);
-            ctx.lineTo(lm.x, baseY - 28);
-            ctx.lineTo(lm.x + 5, baseY - 20);
-            ctx.fill();
-        } else {
-            ctx.fillRect(lm.x - 8, baseY - 8, 16, 8);
-            ctx.beginPath();
-            ctx.moveTo(lm.x - 10, baseY - 8);
-            ctx.lineTo(lm.x, baseY - 15);
-            ctx.lineTo(lm.x + 10, baseY - 8);
-            ctx.fill();
-        }
-    });
-
-    // Near rolling hills with varied greens
-    ctx.fillStyle = '#5BAD5B';
-    ctx.beginPath();
-    ctx.moveTo(0, horizonY + 25);
-    for (let i = 0; i <= W; i += 10) {
-        ctx.lineTo(i, horizonY + 22 + Math.sin(i * 0.012 + frameCount * 0.001) * 12 + Math.sin(i * 0.03) * 6);
-    }
-    ctx.lineTo(W, H);
-    ctx.lineTo(0, H);
-    ctx.fill();
-
-    // Scattered background trees on near hills
-    ctx.fillStyle = '#4A9E4A';
-    for (let i = 0; i < 15; i++) {
-        const tx = (i * 67 + 20) % W;
-        const hillY = horizonY + 22 + Math.sin(tx * 0.012 + frameCount * 0.001) * 12 + Math.sin(tx * 0.03) * 6;
-        const treeH = 6 + (i % 3) * 3;
+    // Clouds (big fluffy retro clouds)
+    const drawCloud = (cx, cy, scaleC) => {
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
         ctx.beginPath();
-        ctx.arc(tx, hillY - treeH, treeH * 0.7, 0, Math.PI * 2);
+        ctx.ellipse(cx, cy, 50 * scaleC, 18 * scaleC, 0, 0, Math.PI * 2);
         ctx.fill();
-    }
+        ctx.beginPath();
+        ctx.ellipse(cx - 30 * scaleC, cy + 4 * scaleC, 35 * scaleC, 14 * scaleC, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(cx + 35 * scaleC, cy + 2 * scaleC, 38 * scaleC, 16 * scaleC, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(cx + 10 * scaleC, cy - 12 * scaleC, 30 * scaleC, 14 * scaleC, 0, 0, Math.PI * 2);
+        ctx.fill();
+    };
+    drawCloud(((frameCount * 0.15 + 100) % (W + 300)) - 150, 55, 1.3);
+    drawCloud(((frameCount * 0.1 + 500) % (W + 300)) - 150, 35, 1.5);
+    drawCloud(((frameCount * 0.2 + 300) % (W + 300)) - 150, 80, 1.0);
+    drawCloud(((frameCount * 0.12 + 700) % (W + 300)) - 150, 100, 0.8);
+
+    // ---- CITY SKYLINE (parallax behind-car) ----
+    const skylineScroll = (player.position * 0.01) % W;
+
+    // Far buildings (dark silhouettes)
+    const drawBuilding = (bx, bw, bh, color) => {
+        const by = horizonY;
+        ctx.fillStyle = color;
+        ctx.fillRect(bx, by - bh, bw, bh);
+        // Windows
+        ctx.fillStyle = 'rgba(255,255,200,0.4)';
+        for (let wy = by - bh + 5; wy < by - 4; wy += 8) {
+            for (let wx = bx + 3; wx < bx + bw - 3; wx += 7) {
+                if (Math.random() > 0.3) ctx.fillRect(wx, wy, 3, 4);
+            }
+        }
+    };
+
+    // Skyline buildings - scrolling
+    const buildings = [
+        { x: 30, w: 35, h: 70 }, { x: 80, w: 25, h: 50 }, { x: 115, w: 40, h: 90 },
+        { x: 170, w: 30, h: 55 }, { x: 215, w: 50, h: 110 }, { x: 280, w: 28, h: 45 },
+        { x: 320, w: 35, h: 75 }, { x: 370, w: 45, h: 95 }, { x: 430, w: 30, h: 60 },
+        { x: 475, w: 55, h: 120 }, { x: 545, w: 30, h: 50 }, { x: 590, w: 40, h: 80 },
+        { x: 645, w: 35, h: 65 }, { x: 695, w: 50, h: 100 }, { x: 760, w: 28, h: 55 },
+        { x: 800, w: 40, h: 85 }, { x: 855, w: 35, h: 70 }
+    ];
+    const buildColors = ['#2a3a5c', '#354870', '#1e2d4e', '#283a60', '#1c2844'];
+    buildings.forEach((b, i) => {
+        const scrolled = ((b.x - skylineScroll) % (W + 100) + W + 100) % (W + 100) - 50;
+        drawBuilding(scrolled, b.w, b.h, buildColors[i % buildColors.length]);
+    });
+
+    // Bridge/overpass silhouette
+    ctx.fillStyle = '#1e2844';
+    ctx.fillRect(0, horizonY - 3, W, 6);
+
+    // Palm trees along the horizon edges (closer, bigger, parallax)
+    const drawPalmTree = (px, baseY, treeScale) => {
+        ctx.save();
+        ctx.translate(px, baseY);
+        // Trunk
+        ctx.strokeStyle = '#5D4037';
+        ctx.lineWidth = 4 * treeScale;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.quadraticCurveTo(-5 * treeScale, -40 * treeScale, 3 * treeScale, -75 * treeScale);
+        ctx.stroke();
+        // Fronds
+        const frondColor = '#2E7D32';
+        for (let f = 0; f < 7; f++) {
+            const angle = (f / 7) * Math.PI * 2 + Math.sin(frameCount * 0.02 + f) * 0.1;
+            ctx.strokeStyle = frondColor;
+            ctx.lineWidth = 2.5 * treeScale;
+            ctx.beginPath();
+            const tipX = Math.cos(angle) * 35 * treeScale + 3 * treeScale;
+            const tipY = -75 * treeScale + Math.sin(angle) * 20 * treeScale;
+            ctx.moveTo(3 * treeScale, -75 * treeScale);
+            ctx.quadraticCurveTo(tipX * 0.6, tipY - 10 * treeScale, tipX, tipY);
+            ctx.stroke();
+            // Leaf fill
+            ctx.fillStyle = frondColor;
+            ctx.beginPath();
+            ctx.ellipse(tipX * 0.7 + 3 * treeScale, tipY - 5 * treeScale + (-75 * treeScale * 0.3), 12 * treeScale, 4 * treeScale, angle, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.restore();
+    };
+
+    // Palm trees at different depths (parallax scroll)
+    const palmScroll = (player.position * 0.03) % 400;
+    const palms = [
+        { x: -40, scale: 1.3, side: 'L' }, { x: 50, scale: 0.8, side: 'L' },
+        { x: W + 40, scale: 1.3, side: 'R' }, { x: W - 50, scale: 0.8, side: 'R' },
+        { x: 160, scale: 0.5, side: 'L' }, { x: W - 160, scale: 0.5, side: 'R' }
+    ];
+    palms.forEach(p => {
+        const px = p.x + (p.side === 'L' ? -1 : 1) * Math.sin(palmScroll * 0.01) * 10;
+        drawPalmTree(px, horizonY + 5, p.scale);
+    });
+
+    // Water/ocean strip at horizon (tropical theme)
+    ctx.fillStyle = 'rgba(100,180,220,0.3)';
+    ctx.fillRect(0, horizonY + 3, W, 12);
+
+    // Ground fill below horizon
+    ctx.fillStyle = '#4CAF50';
+    ctx.fillRect(0, horizonY + 10, W, H - horizonY - 10);
 
     // Render the track using pseudo-3D
     const playerSeg = Math.floor(player.position / track.segmentLength);
-    const camHeight = 2800;
-    const drawDist = 180;
+    const camHeight = 1200;
+    const drawDist = 200;
 
     // Store projected segments for racer rendering
     const segProjections = [];
@@ -1352,15 +1590,35 @@ function drawRacing(dt) {
         // Right rumble
         ctx.fillRect(p2.x - rumbleW, p2.y, rumbleW * 2, Math.max(1, p4.y - p2.y + 1));
 
-        // Road markings (center line dashes)
+        // Road markings - center line and lane dividers
         if (isAlt) {
+            ctx.strokeStyle = '#FFD700';
+            ctx.lineWidth = Math.max(1, p1.scale * 3);
+
+            // Center line
             const centerX = (p1.x + p2.x) / 2;
             const centerNextX = (p3.x + p4.x) / 2;
-            ctx.strokeStyle = '#FFD700';
-            ctx.lineWidth = Math.max(1, p1.scale * 2);
             ctx.beginPath();
             ctx.moveTo(centerX, p1.y);
             ctx.lineTo(centerNextX, p3.y);
+            ctx.stroke();
+
+            // Left lane divider
+            ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+            ctx.lineWidth = Math.max(1, p1.scale * 1.5);
+            const l1x = p1.x + (p2.x - p1.x) * 0.25;
+            const l1nx = p3.x + (p4.x - p3.x) * 0.25;
+            ctx.beginPath();
+            ctx.moveTo(l1x, p1.y);
+            ctx.lineTo(l1nx, p3.y);
+            ctx.stroke();
+
+            // Right lane divider
+            const r1x = p1.x + (p2.x - p1.x) * 0.75;
+            const r1nx = p3.x + (p4.x - p3.x) * 0.75;
+            ctx.beginPath();
+            ctx.moveTo(r1x, p1.y);
+            ctx.lineTo(r1nx, p3.y);
             ctx.stroke();
         }
 
@@ -1385,36 +1643,69 @@ function drawRacing(dt) {
             ctx.restore();
         }
 
-        // Roadside decorations (trees, flowers)
-        if (segIdx % 15 === 0 && n < 80) {
-            const treeScale = p1.scale * 40;
-            if (treeScale > 2) {
-                // Left tree
-                const treeX = p1.x - (p2.x - p1.x) * 0.3;
+        // Roadside palm trees and objects
+        if (segIdx % 10 === 0 && n < 100) {
+            const objScale = p1.scale * 60;
+            if (objScale > 3) {
+                // Left palm tree
+                const treeX = p1.x - (p2.x - p1.x) * 0.2;
                 const treeY = p1.y;
+                ctx.save();
+                ctx.translate(treeX, treeY);
+                // Trunk
                 ctx.fillStyle = '#5D4037';
-                ctx.fillRect(treeX - treeScale * 0.15, treeY - treeScale * 2, treeScale * 0.3, treeScale * 2);
-                ctx.fillStyle = '#388E3C';
-                ctx.beginPath();
-                ctx.arc(treeX, treeY - treeScale * 2.2, treeScale * 0.8, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.fillStyle = '#43A047';
-                ctx.beginPath();
-                ctx.arc(treeX + treeScale * 0.3, treeY - treeScale * 2.5, treeScale * 0.5, 0, Math.PI * 2);
-                ctx.fill();
+                ctx.fillRect(-objScale * 0.08, -objScale * 2.5, objScale * 0.16, objScale * 2.5);
+                // Fronds
+                ctx.fillStyle = '#2E7D32';
+                for (let f = 0; f < 5; f++) {
+                    const angle = (f / 5) * Math.PI * 2;
+                    ctx.beginPath();
+                    ctx.ellipse(
+                        Math.cos(angle) * objScale * 0.6,
+                        -objScale * 2.5 + Math.sin(angle) * objScale * 0.3 - objScale * 0.3,
+                        objScale * 0.5, objScale * 0.12, angle * 0.3, 0, Math.PI * 2
+                    );
+                    ctx.fill();
+                }
+                ctx.restore();
+
+                // Right palm tree
+                const treeX2 = p2.x + (p2.x - p1.x) * 0.2;
+                ctx.save();
+                ctx.translate(treeX2, treeY);
+                ctx.fillStyle = '#5D4037';
+                ctx.fillRect(-objScale * 0.08, -objScale * 2.5, objScale * 0.16, objScale * 2.5);
+                ctx.fillStyle = '#2E7D32';
+                for (let f = 0; f < 5; f++) {
+                    const angle = (f / 5) * Math.PI * 2;
+                    ctx.beginPath();
+                    ctx.ellipse(
+                        Math.cos(angle) * objScale * 0.6,
+                        -objScale * 2.5 + Math.sin(angle) * objScale * 0.3 - objScale * 0.3,
+                        objScale * 0.5, objScale * 0.12, angle * 0.3, 0, Math.PI * 2
+                    );
+                    ctx.fill();
+                }
+                ctx.restore();
             }
         }
 
-        if (segIdx % 8 === 0 && n < 60) {
-            const flowerScale = p1.scale * 20;
-            if (flowerScale > 1) {
-                const flowerX = p2.x + (p2.x - p1.x) * 0.15;
-                const flowerY = p2.y;
-                const flowerHue = (segIdx * 137) % 360;
-                ctx.fillStyle = `hsl(${flowerHue}, 80%, 70%)`;
-                ctx.beginPath();
-                ctx.arc(flowerX, flowerY - flowerScale, flowerScale * 0.4, 0, Math.PI * 2);
-                ctx.fill();
+        // Street lamps
+        if (segIdx % 20 === 5 && n < 80) {
+            const lampScale = p1.scale * 50;
+            if (lampScale > 2) {
+                // Left lamp
+                const lx = p1.x - (p2.x - p1.x) * 0.08;
+                ctx.fillStyle = '#757575';
+                ctx.fillRect(lx - lampScale * 0.03, p1.y - lampScale * 2, lampScale * 0.06, lampScale * 2);
+                ctx.fillStyle = '#BDBDBD';
+                ctx.fillRect(lx - lampScale * 0.15, p1.y - lampScale * 2, lampScale * 0.3, lampScale * 0.08);
+                // Right lamp
+                const rx = p2.x + (p2.x - p1.x) * 0.08;
+                ctx.fillStyle = '#757575';
+                ctx.fillRect(rx - lampScale * 0.03, p2.y - lampScale * 2, lampScale * 0.06, lampScale * 2);
+                ctx.fillStyle = '#BDBDBD';
+                ctx.fillRect(rx - lampScale * 0.15, p2.y - lampScale * 2, lampScale * 0.3, lampScale * 0.08);
             }
         }
     }
@@ -1447,7 +1738,7 @@ function drawRacing(dt) {
         const seg = track.segments[segIdx];
         const p = project(worldX, seg.y, z, camX, camHeight, 0);
 
-        const carScale = p.scale * 22;
+        const carScale = p.scale * 55;
         if (carScale < 2) return;
 
         // Draw kart
@@ -1480,12 +1771,43 @@ function drawRacing(dt) {
             ctx.fillRect((wx - 4) * s, (wy - 4) * s, 8 * s, 8 * s);
         });
 
-        // Character emoji
-        const emojiSize = Math.max(8, 20 * s);
-        ctx.font = `${emojiSize}px serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(r.character.emoji, 0, -6 * s);
+        // Draw character face on the car (scaled)
+        ctx.save();
+        ctx.scale(s, s);
+        // Use drawCarPreview's face rendering via a mini inline version
+        const d = r.carDesign || {};
+        const eyeS = d.eyes || 0;
+        const mouthS = d.mouth || 0;
+        const noseS = d.nose || 0;
+        const bodyS = d.bodyShape || 0;
+        const headY = -18;
+        const headColors2 = {
+            'bunny': '#FFE0E8', 'kitten': '#FFE8CC', 'duckling': '#FFF9C4',
+            'puppy': '#D2B48C', 'panda': '#F5F5F5', 'penguin': '#2C2C3E'
+        };
+        ctx.fillStyle = headColors2[r.character.animal] || '#FFE0E8';
+        if (bodyS === 0) { ctx.beginPath(); ctx.arc(0, headY, 10, 0, Math.PI * 2); ctx.fill(); }
+        else if (bodyS === 1) { ctx.beginPath(); ctx.ellipse(0, headY, 8, 12, 0, 0, Math.PI * 2); ctx.fill(); }
+        else if (bodyS === 2) { roundRect(-9, headY - 9, 18, 18, 4, true); }
+        else { ctx.beginPath(); ctx.moveTo(0, headY - 12); ctx.lineTo(9, headY + 7); ctx.lineTo(-9, headY + 7); ctx.fill(); }
+        // Simple eyes
+        ctx.fillStyle = '#000';
+        if (eyeS === 1) {
+            ctx.strokeStyle = '#000'; ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.arc(-3, headY - 1, 2, Math.PI, 0); ctx.stroke();
+            ctx.beginPath(); ctx.arc(3, headY - 1, 2, Math.PI, 0); ctx.stroke();
+        } else {
+            ctx.beginPath(); ctx.arc(-3, headY - 1, 1.5, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(3, headY - 1, 1.5, 0, Math.PI * 2); ctx.fill();
+        }
+        // Simple mouth
+        ctx.strokeStyle = '#333'; ctx.lineWidth = 0.8;
+        ctx.beginPath(); ctx.arc(0, headY + 3, 3, 0.1, Math.PI - 0.1); ctx.stroke();
+        // Blush
+        ctx.fillStyle = 'rgba(255,150,150,0.3)';
+        ctx.beginPath(); ctx.arc(-6, headY + 1, 2, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(6, headY + 1, 2, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
 
         // Lure indicator
         if (r.lured) {
@@ -1524,12 +1846,12 @@ function drawRacing(dt) {
         ctx.restore();
     });
 
-    // Draw player car at bottom center (always visible)
-    const playerScreenY = H * 0.85;
+    // Draw player car at bottom center (always visible) - classic behind-car view
+    const playerScreenY = H * 0.82;
     ctx.save();
-    ctx.translate(W / 2, playerScreenY);
+    ctx.translate(W / 2 + player.steerInput * -20, playerScreenY);
 
-    const playerCarScale = 0.9;
+    const playerCarScale = 1.6;
 
     // Steering tilt
     const tilt = player.steerInput * -0.15;
