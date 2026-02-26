@@ -11,6 +11,9 @@ const H = canvas.height;
 // GAME STATE
 // ============================================================
 let gameState = 'title'; // title, charSelect, carDesign, countdown, racing, results
+
+// Safe modulo that always returns a positive result
+function mod(n, m) { return ((n % m) + m) % m; }
 let selectedCharacter = null;
 let carDesign = { bodyColor: '#FF6B9D', wheelColor: '#333', accentColor: '#FFD700', bodyStyle: 0 };
 let keys = {};
@@ -204,7 +207,7 @@ class Racer {
             return;
         }
 
-        const segIdx = Math.floor(this.position / track.segmentLength) % track.totalSegments;
+        const segIdx = mod(Math.floor(this.position / track.segmentLength), track.totalSegments);
         const seg = track.segments[segIdx];
 
         if (this.isPlayer) {
@@ -967,7 +970,8 @@ function startRace() {
     const aiChars = characters.filter((_, i) => i !== selectedCharacter);
     aiChars.forEach((char, i) => {
         const ai = new Racer(char, false);
-        ai.position = -(i + 1) * 300; // Stagger start
+        const trackLen = track.totalSegments * track.segmentLength;
+        ai.position = trackLen - (i + 1) * 300; // Stagger start behind player
         ai.x = (Math.random() - 0.5) * 0.4;
         racers.push(ai);
     });
@@ -1068,9 +1072,9 @@ function drawRacing(dt) {
     const segProjections = [];
 
     for (let n = drawDist; n > 0; n--) {
-        const segIdx = (playerSeg + n) % track.totalSegments;
+        const segIdx = mod(playerSeg + n, track.totalSegments);
         const seg = track.segments[segIdx];
-        const nextSegIdx = (segIdx + 1) % track.totalSegments;
+        const nextSegIdx = mod(segIdx + 1, track.totalSegments);
         const nextSeg = track.segments[nextSegIdx];
 
         const z = n * track.segmentLength - (player.position % track.segmentLength);
@@ -1081,7 +1085,7 @@ function drawRacing(dt) {
         // Cumulative curve for x offset
         let cumulativeCurve = 0;
         for (let c = 0; c <= n; c++) {
-            const ci = (playerSeg + c) % track.totalSegments;
+            const ci = mod(playerSeg + c, track.totalSegments);
             cumulativeCurve += track.segments[ci].curve * 0.05;
         }
 
@@ -1187,7 +1191,7 @@ function drawRacing(dt) {
 
     // Render racers sorted by distance (far to near)
     const racerRender = racers.map(r => {
-        const rSeg = Math.floor(r.position / track.segmentLength) % track.totalSegments;
+        const rSeg = mod(Math.floor(r.position / track.segmentLength), track.totalSegments);
         let relPos = r.position - player.position;
         if (relPos < -track.totalSegments * track.segmentLength / 2) relPos += track.totalSegments * track.segmentLength;
         if (relPos > track.totalSegments * track.segmentLength / 2) relPos -= track.totalSegments * track.segmentLength;
@@ -1200,12 +1204,12 @@ function drawRacing(dt) {
         const z = relPos;
         const camX = player.x * track.roadWidth * 0.5;
 
-        const segIdx = Math.floor(r.position / track.segmentLength) % track.totalSegments;
+        const segIdx = mod(Math.floor(r.position / track.segmentLength), track.totalSegments);
         let cumulativeCurve = 0;
         const playerSegIdx = Math.floor(player.position / track.segmentLength);
         const segDist = Math.floor(relPos / track.segmentLength);
         for (let c = 0; c <= segDist; c++) {
-            const ci = (playerSegIdx + c) % track.totalSegments;
+            const ci = mod(playerSegIdx + c, track.totalSegments);
             cumulativeCurve += track.segments[ci].curve * 0.05;
         }
 
@@ -1499,7 +1503,7 @@ function drawMiniMap() {
 
     // Draw racers on minimap
     racers.forEach(r => {
-        const segIdx = Math.floor(r.position / track.segmentLength) % track.totalSegments;
+        const segIdx = mod(Math.floor(r.position / track.segmentLength), track.totalSegments);
         const tp = trackPoints[segIdx];
         if (!tp) return;
         const px = cx + (tp.x - offsetX) * mapScale;
