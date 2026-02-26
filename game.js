@@ -1623,20 +1623,24 @@ function drawRacing(dt) {
         }
 
         // Item boxes
-        if (seg.hasItem && n < 100) {
+        if (seg.hasItem && n < 120) {
             const itemX = (p1.x + p2.x) / 2;
-            const itemY = p1.y - 15 * p1.scale;
-            const itemSize = Math.max(4, 18 * p1.scale);
-            const bob = Math.sin(frameCount * 0.08 + segIdx) * 3 * p1.scale;
+            const itemY = p1.y - 30 * p1.scale;
+            const itemSize = Math.max(6, 40 * p1.scale);
+            const bob = Math.sin(frameCount * 0.08 + segIdx) * 5 * p1.scale;
 
-            // Question box
-            ctx.fillStyle = '#FFD700';
+            // Glowing question box
+            ctx.fillStyle = 'rgba(255,215,0,0.3)';
             ctx.save();
             ctx.translate(itemX, itemY + bob);
+            ctx.beginPath();
+            ctx.arc(0, 0, itemSize * 0.9, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#FFD700';
             ctx.rotate(frameCount * 0.03);
             ctx.fillRect(-itemSize / 2, -itemSize / 2, itemSize, itemSize);
             ctx.fillStyle = '#FFA000';
-            ctx.font = `bold ${Math.max(6, itemSize * 0.7)}px sans-serif`;
+            ctx.font = `bold ${Math.max(8, itemSize * 0.65)}px sans-serif`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText('?', 0, 0);
@@ -1644,11 +1648,11 @@ function drawRacing(dt) {
         }
 
         // Roadside palm trees and objects
-        if (segIdx % 10 === 0 && n < 100) {
-            const objScale = p1.scale * 60;
+        if (segIdx % 10 === 0 && n < 120) {
+            const objScale = p1.scale * 140;
             if (objScale > 3) {
                 // Left palm tree
-                const treeX = p1.x - (p2.x - p1.x) * 0.2;
+                const treeX = p1.x - (p2.x - p1.x) * 0.15;
                 const treeY = p1.y;
                 ctx.save();
                 ctx.translate(treeX, treeY);
@@ -1670,7 +1674,7 @@ function drawRacing(dt) {
                 ctx.restore();
 
                 // Right palm tree
-                const treeX2 = p2.x + (p2.x - p1.x) * 0.2;
+                const treeX2 = p2.x + (p2.x - p1.x) * 0.15;
                 ctx.save();
                 ctx.translate(treeX2, treeY);
                 ctx.fillStyle = '#5D4037';
@@ -1691,8 +1695,8 @@ function drawRacing(dt) {
         }
 
         // Street lamps
-        if (segIdx % 20 === 5 && n < 80) {
-            const lampScale = p1.scale * 50;
+        if (segIdx % 20 === 5 && n < 100) {
+            const lampScale = p1.scale * 110;
             if (lampScale > 2) {
                 // Left lamp
                 const lx = p1.x - (p2.x - p1.x) * 0.08;
@@ -1738,7 +1742,7 @@ function drawRacing(dt) {
         const seg = track.segments[segIdx];
         const p = project(worldX, seg.y, z, camX, camHeight, 0);
 
-        const carScale = p.scale * 55;
+        const carScale = p.scale * 90;
         if (carScale < 2) return;
 
         // Draw kart
